@@ -27,13 +27,12 @@
     "type": "module",
     "exports": {
         ".": {
-            "import": "./dist/esm/index.js",
-            "require": "./dist/cjs/index.js",
-            "types": "./dist/types/index.d.ts"
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
         }
     },
-    "main": "dist/cjs/index.js",
-    "types": "dist/types/index.d.ts",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "directories": {
         "doc": "docs",
         "test": "tests"
@@ -44,11 +43,7 @@
         "LICENSE"
     ],
     "scripts": {
-        "build": "npm run clean && npm run build:cjs && npm run build:esm && npm run add-js-extensions && npm run build:types",
-        "build:cjs": "tsc --project tsconfig.cjs.json",
-        "build:esm": "tsc --project tsconfig.esm.json",
-        "add-js-extensions": "node scripts/add-js-extensions.js",
-        "build:types": "tsc --project tsconfig.types.json",
+        "build": "npm run clean && tsc",
         "clean": "rm -rf dist",
         "test": "jest",
         "test:watch": "jest --watch",
