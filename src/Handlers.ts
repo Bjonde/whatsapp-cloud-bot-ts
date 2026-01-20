@@ -11,9 +11,9 @@ import type {
   HandlerOptions,
   InteractiveHandlerOptions,
   MessageType,
-} from './types';
-import type { Update } from './Update';
-import type { UserContext } from './UserContext';
+} from './types/index.js';
+import type { Update } from './Update.js';
+import type { UserContext } from './UserContext.js';
 
 /**
  * Base Update Handler Class

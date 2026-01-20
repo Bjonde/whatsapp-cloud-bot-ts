@@ -3,12 +3,16 @@
  * Routes incoming messages to appropriate handlers
  */
 
-import type { WebhookPayload, WebhookValue, NextStepConfig } from './types';
-import { Update } from './Update';
-import { UserContext } from './UserContext';
-import type { UpdateHandler } from './Handlers';
-import { MessageHandler } from './Handlers';
-import { keysExist } from './utils/helpers';
+import type {
+  WebhookPayload,
+  WebhookValue,
+  NextStepConfig,
+} from './types/index.js';
+import { Update } from './Update.js';
+import { UserContext } from './UserContext.js';
+import type { UpdateHandler } from './Handlers.js';
+import { MessageHandler } from './Handlers.js';
+import { keysExist } from './utils/helpers.js';
 
 /**
  * Async Queue for processing updates

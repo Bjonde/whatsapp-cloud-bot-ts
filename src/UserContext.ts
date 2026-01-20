@@ -3,7 +3,7 @@
  * Manages user-specific data in conversations
  */
 
-import type { UserContextData } from './types';
+import type { UserContextData } from './types/index.js';
 
 /**
  * Global context storage for all users

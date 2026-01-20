@@ -9,7 +9,7 @@ import type {
   WhatsAppMessage,
   SendMessageOptions,
   SendMediaOptions,
-} from './types';
+} from './types/index.js';
 
 /**
  * Update class - encapsulates an incoming WhatsApp message

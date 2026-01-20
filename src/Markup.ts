@@ -3,7 +3,7 @@
  * Used to create buttons, lists, and other interactive elements
  */
 
-import type { ReplyMarkup, ReplyMarkupType } from './types';
+import type { ReplyMarkup, ReplyMarkupType } from './types/index.js';
 
 /**
  * Base Reply Markup Class

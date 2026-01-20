@@ -13,10 +13,10 @@ import type {
   HandlerFunction,
   HandlerOptions,
   InteractiveHandlerOptions,
-} from './types';
-import { Dispatcher } from './Dispatcher';
-import type { Update } from './Update';
-import type { UpdateHandler } from './Handlers';
+} from './types/index.js';
+import { Dispatcher } from './Dispatcher.js';
+import type { Update } from './Update.js';
+import type { UpdateHandler } from './Handlers.js';
 import {
   MessageHandler,
   InteractiveQueryHandler,
@@ -26,7 +26,7 @@ import {
   DocumentHandler,
   StickerHandler,
   LocationHandler,
-} from './Handlers';
+} from './Handlers.js';
 import {
   markAsRead as markMessageAsRead,
   sendTextMessage,
@@ -37,8 +37,8 @@ import {
   getMediaUrl,
   downloadMedia,
   downloadMediaData,
-} from './Message';
-import { formatPhoneNumber } from './utils/helpers';
+} from './Message.js';
+import { formatPhoneNumber } from './utils/helpers.js';
 
 /**
  * WhatsApp Client Configuration

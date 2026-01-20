@@ -6,17 +6,17 @@
  */
 
 // Main Client
-export { WhatsApp } from './WhatsApp';
-export type { WhatsAppConfig } from './WhatsApp';
+export { WhatsApp } from './WhatsApp.js';
+export type { WhatsAppConfig } from './WhatsApp.js';
 
 // Core Classes
-export { Update } from './Update';
+export { Update } from './Update.js';
 export {
   UserContext,
   clearAllContexts,
   getAllContextUsers,
-} from './UserContext';
-export { Dispatcher } from './Dispatcher';
+} from './UserContext.js';
+export { Dispatcher } from './Dispatcher.js';
 
 // Handlers
 export {
@@ -31,7 +31,7 @@ export {
   LocationHandler,
   UnknownHandler,
   UnsupportedHandler,
-} from './Handlers';
+} from './Handlers.js';
 
 // Markup Components
 export {
@@ -42,13 +42,13 @@ export {
   ListSection,
   InlineList,
   InlineLocationRequest,
-} from './Markup';
+} from './Markup.js';
 
 // Types
-export * from './types';
+export * from './types/index.js';
 
 // Utilities
-export * from './utils/helpers';
+export * from './utils/helpers.js';
 
 // Default export
-export { WhatsApp as default } from './WhatsApp';
+export { WhatsApp as default } from './WhatsApp.js';

@@ -9,8 +9,8 @@ import FormData from 'form-data';
 import { createReadStream } from 'fs';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
-import type { ReplyMarkup } from './types';
-import { isLink, getExtensionFromMimeType } from './utils/helpers';
+import type { ReplyMarkup } from './types/index.js';
+import { isLink, getExtensionFromMimeType } from './utils/helpers.js';
 
 const TIMEOUT = 30000; // 30 seconds
 
