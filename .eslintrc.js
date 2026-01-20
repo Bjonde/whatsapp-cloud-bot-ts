@@ -9,7 +9,16 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended',
   ],
+  plugins: ['import'],
   rules: {
+    'import/extensions': [
+      'error',
+      'always',
+      {
+        js: 'always',
+        ts: 'always',
+      },
+    ],
     '@typescript-eslint/explicit-function-return-type': [
       'warn',
       {
