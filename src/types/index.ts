@@ -122,6 +122,7 @@ export interface UpdateData {
   mediaFileId?: string;
   mediaHash?: string;
   mediaVoice?: boolean;
+  mediaUrl?: string;
   locAddress?: string;
   locName?: string;
   locLatitude?: number;

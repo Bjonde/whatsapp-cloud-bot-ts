@@ -168,6 +168,7 @@ export class ImageHandler extends MediaHandler {
       mediaMimeType: imageData?.mime_type,
       mediaFileId: imageData?.id,
       mediaHash: imageData?.sha256,
+      mediaUrl: imageData?.url,
     };
   }
 }
@@ -187,6 +188,7 @@ export class AudioHandler extends MediaHandler {
       mediaMimeType: audioData?.mime_type,
       mediaFileId: audioData?.id,
       mediaHash: audioData?.sha256,
+      mediaUrl: audioData?.url,
       mediaVoice: audioData?.voice,
     };
   }
@@ -207,6 +209,7 @@ export class VideoHandler extends MediaHandler {
       mediaMimeType: videoData?.mime_type,
       mediaFileId: videoData?.id,
       mediaHash: videoData?.sha256,
+      mediaUrl: videoData?.url,
     };
   }
 }
@@ -226,6 +229,7 @@ export class DocumentHandler extends MediaHandler {
       mediaMimeType: docData?.mime_type,
       mediaFileId: docData?.id,
       mediaHash: docData?.sha256,
+      mediaUrl: docData?.url,
     };
   }
 }
@@ -245,6 +249,7 @@ export class StickerHandler extends MediaHandler {
       mediaMimeType: stickerData?.mime_type,
       mediaFileId: stickerData?.id,
       mediaHash: stickerData?.sha256,
+      mediaUrl: stickerData?.url,
     };
   }
 }
