@@ -90,7 +90,7 @@ export class WhatsApp {
 
     this.baseUrl = `https://graph.facebook.com/v${this.versionNumber}.0`;
     this.msgUrl = `${this.baseUrl}/${this.id}/messages`;
-    this.mediaUrl = '';
+    this.mediaUrl = `${this.baseUrl}/${this.id}/media`;
 
     this.dispatcher = new Dispatcher(this, config.markAsRead !== false);
 
@@ -108,7 +108,7 @@ export class WhatsApp {
     this.versionNumber = version;
     this.baseUrl = `https://graph.facebook.com/v${this.versionNumber}.0`;
     this.msgUrl = `${this.baseUrl}/${this.id}/messages`;
-    this.mediaUrl = '';
+    this.mediaUrl = `${this.baseUrl}/${this.id}/media`;
   }
 
   /**
