@@ -101,6 +101,7 @@ export interface MediaObject {
   mime_type: string;
   sha256: string;
   caption?: string;
+  url?: string;
 }
 
 /**
