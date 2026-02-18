@@ -3,6 +3,9 @@
  * Handles sending different types of messages to WhatsApp Business API
  */
 
+import fs from 'fs';
+import mime from 'mime-types';
+
 import type { AxiosResponse } from 'axios';
 import axios from 'axios';
 import FormData from 'form-data';
@@ -30,13 +33,47 @@ function getHeaders(token: string): Record<string, string> {
 export async function markAsRead(
   url: string,
   token: string,
-  messageId: string
+  messageId: string,
+  alwaysShowTyping: boolean
 ): Promise<AxiosResponse> {
-  const payload = {
+  let payload:any = {
     messaging_product: 'whatsapp',
     status: 'read',
-    message_id: messageId,
+    message_id: messageId
   };
+
+  if (alwaysShowTyping) {
+    payload["typing_indicator"] = {
+      "type": "text"
+    };
+  }
+
+  return axios.post(url, payload, {
+    headers: getHeaders(token),
+    timeout: TIMEOUT,
+  });
+}
+
+
+/**
+ * Send typing indicator
+ */
+export async function sendTypingIndicator(
+  url: string,
+  token: string,
+  messageId: string,
+  markAsRead: boolean
+): Promise<AxiosResponse> {
+  let payload:any = {
+    messaging_product: 'whatsapp',
+    message_id: messageId
+  };
+
+  if (markAsRead) {
+    payload["typing_indicator"] = {
+      "type": "text"
+    };
+  }
 
   return axios.post(url, payload, {
     headers: getHeaders(token),
@@ -340,4 +377,74 @@ export async function downloadMediaData(
   });
 
   return Buffer.from(response.data);
+}
+
+
+
+
+export interface MediaToDataUrlOptions {
+  /**
+   * Override detected MIME type
+   * e.g. "image/jpeg"
+   */
+  mimeTypeOverride?: string;
+
+  /**
+   * Max file size in bytes
+   * Prevents accidentally base64-ing huge files
+   * Default: 20MB
+   */
+  maxSizeBytes?: number;
+
+  /**
+   * If true, returns raw base64 instead of data URL
+   * Default: false
+   */
+  rawBase64?: boolean;
+}
+
+export function mediaPathToData(
+  mediaPath: string,
+  options: MediaToDataUrlOptions = {}
+): {
+  dataUrl: string;
+  mimeType: string;
+  sizeBytes: number;
+} {
+  const {
+    mimeTypeOverride,
+    maxSizeBytes = 20 * 1024 * 1024, // 20MB
+    rawBase64 = false,
+  } = options;
+
+  if (!fs.existsSync(mediaPath)) {
+    throw new Error(`Media file not found: ${mediaPath}`);
+  }
+
+  const stats = fs.statSync(mediaPath);
+  if (!stats.isFile()) {
+    throw new Error(`Path is not a file: ${mediaPath}`);
+  }
+
+  if (stats.size > maxSizeBytes) {
+    throw new Error(
+      `File too large (${stats.size} bytes). Max allowed is ${maxSizeBytes} bytes`
+    );
+  }
+
+  // Detect MIME type
+  const detectedMime =
+    mimeTypeOverride || mime.lookup(mediaPath) || 'application/octet-stream';
+
+  // Read file
+  const buffer = fs.readFileSync(mediaPath);
+  const base64 = buffer.toString('base64');
+
+  const dataUrl = rawBase64 ? base64 : `data:${detectedMime};base64,${base64}`;
+
+  return {
+    dataUrl,
+    mimeType: detectedMime,
+    sizeBytes: stats.size,
+  };
 }

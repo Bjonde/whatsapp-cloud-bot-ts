@@ -303,7 +303,8 @@ export interface WhatsAppClient {
     mediaPath: string,
     options?: SendMediaOptions
   ): Promise<AxiosResponse>;
-  markAsRead(message: WhatsAppMessage): Promise<AxiosResponse>;
+  markAsRead(message: WhatsAppMessage, showTyping: boolean): Promise<AxiosResponse>;
+  sendTypingIndicator(messageId: string, markAsRead: boolean): Promise<AxiosResponse>;
   getMediaUrl(mediaId: string): Promise<any>;
   downloadMedia(mediaId: string, filePath: string): Promise<string>;
 }
@@ -313,4 +314,5 @@ export interface WhatsAppClient {
  */
 export interface DispatcherConfig {
   markAsRead: boolean;
+  showTyping: boolean;
 }

@@ -37,6 +37,7 @@ import {
   getMediaUrl,
   downloadMedia,
   downloadMediaData,
+  sendTypingIndicator,
 } from './Message.js';
 import { formatPhoneNumber } from './utils/helpers.js';
 
@@ -47,6 +48,7 @@ export interface WhatsAppConfig {
   numberId: string;
   token: string;
   markAsRead?: boolean;
+  showTyping?: boolean;
   version?: number;
   handlers?: Record<string, UpdateHandler>;
 }
@@ -92,8 +94,7 @@ export class WhatsApp {
     this.msgUrl = `${this.baseUrl}/${this.id}/messages`;
     this.mediaUrl = `${this.baseUrl}/${this.id}/media`;
 
-    this.dispatcher = new Dispatcher(this, config.markAsRead !== false);
-
+    this.dispatcher = new Dispatcher(this, config.markAsRead !== false, config.showTyping !== false);
     if (config.handlers) {
       for (const handler of Object.values(config.handlers)) {
         this.dispatcher.registerHandler(handler);
@@ -121,8 +122,15 @@ export class WhatsApp {
   /**
    * Mark message as read
    */
-  async markAsRead(message: WhatsAppMessage): Promise<AxiosResponse> {
-    return markMessageAsRead(this.msgUrl, this.token, message.id);
+  async markAsRead(message: WhatsAppMessage, showTyping: boolean): Promise<AxiosResponse> {
+    return markMessageAsRead(this.msgUrl, this.token, message.id, showTyping);
+  }
+
+  /**
+   * Send typing indicator
+   */
+  async sendTypingIndicator(messageId: string, markAsRead: boolean = true): Promise<AxiosResponse> {
+    return sendTypingIndicator(this.msgUrl, this.token, messageId, markAsRead);
   }
 
   /**

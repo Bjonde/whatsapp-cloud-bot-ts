@@ -7,6 +7,7 @@ import type {
   WebhookPayload,
   WebhookValue,
   NextStepConfig,
+  WhatsAppClient,
 } from './types/index.js';
 import { Update } from './Update.js';
 import { UserContext } from './UserContext.js';
@@ -54,16 +55,18 @@ class AsyncQueue<T> {
  * Dispatcher class - manages message routing and handler execution
  */
 export class Dispatcher {
-  private bot: any;
+  private bot: WhatsAppClient;
   private queue: AsyncQueue<WebhookPayload>;
   private registeredHandlers: UpdateHandler[] = [];
   private markAsRead: boolean;
+  private showTyping: boolean;
   private nextStepHandlers: Map<string, NextStepConfig> = new Map();
 
-  constructor(bot: any, markAsRead: boolean = true) {
+  constructor(bot: WhatsAppClient, markAsRead: boolean = true, showTyping: boolean = false) {
     this.bot = bot;
     this.queue = new AsyncQueue<WebhookPayload>();
     this.markAsRead = markAsRead;
+    this.showTyping = showTyping;
   }
 
   /**
@@ -101,7 +104,7 @@ export class Dispatcher {
 
     // Mark message as read if enabled
     if (this.markAsRead) {
-      await this.bot.markAsRead(message).catch(() => {
+      await this.bot.markAsRead(message, this.showTyping).catch(() => {
         // Silently fail - marking as read is not critical
       });
     }
