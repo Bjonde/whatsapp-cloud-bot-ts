@@ -2,7 +2,9 @@
 
 A powerful, fully-typed TypeScript/JavaScript library for building WhatsApp bots using the [WhatsApp Business Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api).
 
-[![npm version](https://img.shields.io/npm/v/whatsapp-cloud-bot-ts.svg)](https://www.npmjs.com/package/whatsapp-cloud-bot-ts)
+Looking for Python? A Python version exists here: [python-whatsapp-bot](https://github.com/radi-dev/python-whatsapp-bot).
+
+[![npm version](https://img.shields.io/npm/v/whatsapp-cloud-bot-ts.svg)](https://www.npmjs.com/package/whatsapp-cloud-bot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue.svg)](https://www.typescriptlang.org/)
 
@@ -575,6 +577,7 @@ MIT © [Radi](https://github.com/Radi-dev)
 - [GitHub Repository](https://github.com/Radi-dev/whatsapp-cloud-bot-ts)
 - [NPM Package](https://www.npmjs.com/package/whatsapp-cloud-bot-ts)
 - [Issue Tracker](https://github.com/Radi-dev/whatsapp-cloud-bot-ts/issues)
+- [Python version (python-whatsapp-bot)](https://github.com/radi-dev/python-whatsapp-bot)
 
 ## Support
 
