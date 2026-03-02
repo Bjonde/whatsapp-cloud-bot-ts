@@ -55,7 +55,7 @@ export class Update {
     text: string,
     options: SendMessageOptions = {}
   ): Promise<AxiosResponse> {
-    return this.bot.sendMessage(this.userPhoneNumber, text, {
+    return await this.bot.sendMessage(this.userPhoneNumber, text, {
       ...options,
       msgId: options.msgId || this.messageId,
     });
@@ -68,7 +68,7 @@ export class Update {
     mediaPath: string,
     options: SendMediaOptions = {}
   ): Promise<AxiosResponse> {
-    return this.bot.sendMediaMessage(this.userPhoneNumber, mediaPath, {
+    return await this.bot.sendMediaMessage(this.userPhoneNumber, mediaPath, {
       ...options,
       msgId: options.msgId || this.messageId,
     });
@@ -82,7 +82,7 @@ export class Update {
     components?: any[],
     languageCode?: string
   ): Promise<AxiosResponse> {
-    return this.bot.sendTemplateMessage(
+    return await this.bot.sendTemplateMessage(
       this.userPhoneNumber,
       templateName,
       components,
@@ -97,7 +97,7 @@ export class Update {
     imagePath: string,
     caption?: string
   ): Promise<AxiosResponse> {
-    return this.bot.sendImage(this.userPhoneNumber, imagePath, caption);
+    return await this.bot.sendImage(this.userPhoneNumber, imagePath, caption);
   }
 
   /**
@@ -107,14 +107,14 @@ export class Update {
     videoPath: string,
     caption?: string
   ): Promise<AxiosResponse> {
-    return this.bot.sendVideo(this.userPhoneNumber, videoPath, caption);
+    return await this.bot.sendVideo(this.userPhoneNumber, videoPath, caption);
   }
 
   /**
    * Reply with audio message
    */
   async replyAudio(audioPath: string): Promise<AxiosResponse> {
-    return this.bot.sendAudio(this.userPhoneNumber, audioPath);
+    return await this.bot.sendAudio(this.userPhoneNumber, audioPath);
   }
 
   /**
@@ -124,7 +124,11 @@ export class Update {
     documentPath: string,
     caption?: string
   ): Promise<AxiosResponse> {
-    return this.bot.sendDocument(this.userPhoneNumber, documentPath, caption);
+    return await this.bot.sendDocument(
+      this.userPhoneNumber,
+      documentPath,
+      caption
+    );
   }
 
   /**
@@ -136,7 +140,7 @@ export class Update {
     name?: string,
     address?: string
   ): Promise<AxiosResponse> {
-    return this.bot.sendLocation(
+    return await this.bot.sendLocation(
       this.userPhoneNumber,
       latitude,
       longitude,
@@ -149,7 +153,7 @@ export class Update {
    * Reply with sticker message
    */
   async replySticker(stickerPath: string): Promise<AxiosResponse> {
-    return this.bot.sendMediaMessage(this.userPhoneNumber, stickerPath, {
+    return await this.bot.sendMediaMessage(this.userPhoneNumber, stickerPath, {
       mediaType: 'sticker',
     });
   }
