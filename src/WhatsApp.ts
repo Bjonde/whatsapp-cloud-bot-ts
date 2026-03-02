@@ -196,13 +196,14 @@ export class WhatsApp {
     options: SendMediaOptions = {}
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
+    const mediaType = options.mediaType || 'image';
 
     return sendMediaMessage(
       this.msgUrl,
       this.token,
       formattedPhone,
       mediaPath,
-      'image',
+      mediaType,
       options.caption
     );
   }

@@ -204,6 +204,9 @@ export interface SendMessageOptions {
 export interface SendMediaOptions {
   caption?: string;
   mediaProviderToken?: string;
+  msgId?: string;
+  tagMessage?: boolean;
+  mediaType?: 'image' | 'video' | 'audio' | 'document' | 'sticker';
 }
 
 /**
@@ -250,33 +253,97 @@ export interface WhatsAppClient {
   msgUrl: string;
   mediaUrl: string;
 
+  // Core methods
   processUpdate(update: WebhookPayload): Promise<void>;
+  setVersion(version: number): void;
+
+  // Message sending methods
   sendMessage(
     phoneNumber: string,
     text: string,
     options?: SendMessageOptions
   ): Promise<AxiosResponse>;
+
   sendTemplateMessage(
     phoneNumber: string,
     templateName: string,
     components?: TemplateComponent[],
     languageCode?: string
   ): Promise<AxiosResponse>;
+
   sendMediaMessage(
     phoneNumber: string,
     mediaPath: string,
     options?: SendMediaOptions
   ): Promise<AxiosResponse>;
+
+  sendImage(
+    phoneNumber: string,
+    imagePath: string,
+    caption?: string
+  ): Promise<AxiosResponse>;
+
+  sendVideo(
+    phoneNumber: string,
+    videoPath: string,
+    caption?: string
+  ): Promise<AxiosResponse>;
+
+  sendAudio(phoneNumber: string, audioPath: string): Promise<AxiosResponse>;
+
+  sendDocument(
+    phoneNumber: string,
+    documentPath: string,
+    caption?: string
+  ): Promise<AxiosResponse>;
+
+  sendLocation(
+    phoneNumber: string,
+    latitude: number,
+    longitude: number,
+    name?: string,
+    address?: string
+  ): Promise<AxiosResponse>;
+
+  // Media utility methods
+  getMediaUrl(mediaId: string): Promise<any>;
+  downloadMedia(mediaId: string, filePath?: string): Promise<string>;
+  downloadMediaData(mediaId: string): Promise<Buffer>;
+
+  // Message status methods
   markAsRead(
     message: WhatsAppMessage,
     showTyping: boolean
   ): Promise<AxiosResponse>;
   sendTypingIndicator(
     messageId: string,
-    markAsRead: boolean
+    markAsRead?: boolean
   ): Promise<AxiosResponse>;
-  getMediaUrl(mediaId: string): Promise<any>;
-  downloadMedia(mediaId: string, filePath: string): Promise<string>;
+
+  // Handler registration methods
+  onMessage(action: HandlerFunction, options?: HandlerOptions): void;
+  onInteractiveMessage(
+    action: HandlerFunction,
+    options?: InteractiveHandlerOptions
+  ): void;
+  onImageMessage(action: HandlerFunction, options?: HandlerOptions): void;
+  onAudioMessage(action: HandlerFunction, options?: HandlerOptions): void;
+  onVideoMessage(action: HandlerFunction, options?: HandlerOptions): void;
+  onDocumentMessage(action: HandlerFunction, options?: HandlerOptions): void;
+  onStickerMessage(action: HandlerFunction, options?: HandlerOptions): void;
+  onLocationMessage(action: HandlerFunction, options?: HandlerOptions): void;
+
+  // Conversation flow methods
+  setNextStep(
+    update: Update,
+    handler: UpdateHandler,
+    fallbackFunction?: () => void | Promise<void>,
+    fallbackRegex?: string | RegExp
+  ): void;
+  clearNextStep(phoneNumber: string): void;
+
+  // Utility methods
+  getQueueStatus(): { size: number; isProcessing: boolean };
 }
 
 /**

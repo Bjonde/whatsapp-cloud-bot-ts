@@ -9,13 +9,14 @@ import type {
   WhatsAppMessage,
   SendMessageOptions,
   SendMediaOptions,
+  WhatsAppClient,
 } from './types/index.js';
 
 /**
  * Update class - encapsulates an incoming WhatsApp message
  */
 export class Update {
-  public bot: any; // WhatsAppClient - using any to avoid circular dependency
+  public bot: WhatsAppClient;
   public value: WebhookValue;
   public message: WhatsAppMessage;
   public user: {
@@ -37,7 +38,7 @@ export class Update {
   public locLatitude?: number;
   public locLongitude?: number;
 
-  constructor(bot: any, value: WebhookValue) {
+  constructor(bot: WhatsAppClient, value: WebhookValue) {
     this.bot = bot;
     this.value = value;
     this.message = value.messages?.[0] || ({} as WhatsAppMessage);
@@ -67,7 +68,10 @@ export class Update {
     mediaPath: string,
     options: SendMediaOptions = {}
   ): Promise<AxiosResponse> {
-    return this.bot.sendMediaMessage(this.userPhoneNumber, mediaPath, options);
+    return this.bot.sendMediaMessage(this.userPhoneNumber, mediaPath, {
+      ...options,
+      msgId: options.msgId || this.messageId,
+    });
   }
 
   /**
@@ -84,5 +88,69 @@ export class Update {
       components,
       languageCode
     );
+  }
+
+  /**
+   * Reply with image message
+   */
+  async replyImage(
+    imagePath: string,
+    caption?: string
+  ): Promise<AxiosResponse> {
+    return this.bot.sendImage(this.userPhoneNumber, imagePath, caption);
+  }
+
+  /**
+   * Reply with video message
+   */
+  async replyVideo(
+    videoPath: string,
+    caption?: string
+  ): Promise<AxiosResponse> {
+    return this.bot.sendVideo(this.userPhoneNumber, videoPath, caption);
+  }
+
+  /**
+   * Reply with audio message
+   */
+  async replyAudio(audioPath: string): Promise<AxiosResponse> {
+    return this.bot.sendAudio(this.userPhoneNumber, audioPath);
+  }
+
+  /**
+   * Reply with document message
+   */
+  async replyDocument(
+    documentPath: string,
+    caption?: string
+  ): Promise<AxiosResponse> {
+    return this.bot.sendDocument(this.userPhoneNumber, documentPath, caption);
+  }
+
+  /**
+   * Reply with location message
+   */
+  async replyLocation(
+    latitude: number,
+    longitude: number,
+    name?: string,
+    address?: string
+  ): Promise<AxiosResponse> {
+    return this.bot.sendLocation(
+      this.userPhoneNumber,
+      latitude,
+      longitude,
+      name,
+      address
+    );
+  }
+
+  /**
+   * Reply with sticker message
+   */
+  async replySticker(stickerPath: string): Promise<AxiosResponse> {
+    return this.bot.sendMediaMessage(this.userPhoneNumber, stickerPath, {
+      mediaType: 'sticker',
+    });
   }
 }
