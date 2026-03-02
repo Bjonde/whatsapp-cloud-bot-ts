@@ -3,6 +3,7 @@
  */
 
 import type { AxiosResponse } from 'axios';
+import type { Update } from '../Update.js';
 
 /**
  * WhatsApp webhook value object received from WhatsApp servers
@@ -206,43 +207,6 @@ export interface SendMediaOptions {
 }
 
 /**
- * Update class - represents incoming message update
- */
-export interface Update {
-  bot: WhatsAppClient;
-  value: WebhookValue;
-  message: WhatsAppMessage;
-  user: {
-    profile: { name: string };
-    wa_id: string;
-  };
-  userDisplayName: string;
-  userPhoneNumber: string;
-  messageId: string;
-  messageText?: string;
-  interactiveText?: any;
-  mediaUrl?: string;
-  mediaMimeType?: string;
-  mediaFileId?: string;
-  mediaHash?: string;
-  mediaVoice?: boolean;
-  locAddress?: string;
-  locName?: string;
-  locLatitude?: number;
-  locLongitude?: number;
-
-  replyMessage(
-    text: string,
-    options?: SendMessageOptions
-  ): Promise<AxiosResponse>;
-
-  replyMedia(
-    mediaPath: string,
-    options?: SendMediaOptions
-  ): Promise<AxiosResponse>;
-}
-
-/**
  * User context for managing conversation state
  */
 export interface UserContext {
@@ -303,8 +267,14 @@ export interface WhatsAppClient {
     mediaPath: string,
     options?: SendMediaOptions
   ): Promise<AxiosResponse>;
-  markAsRead(message: WhatsAppMessage, showTyping: boolean): Promise<AxiosResponse>;
-  sendTypingIndicator(messageId: string, markAsRead: boolean): Promise<AxiosResponse>;
+  markAsRead(
+    message: WhatsAppMessage,
+    showTyping: boolean
+  ): Promise<AxiosResponse>;
+  sendTypingIndicator(
+    messageId: string,
+    markAsRead: boolean
+  ): Promise<AxiosResponse>;
   getMediaUrl(mediaId: string): Promise<any>;
   downloadMedia(mediaId: string, filePath: string): Promise<string>;
 }
