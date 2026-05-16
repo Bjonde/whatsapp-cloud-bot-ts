@@ -187,7 +187,7 @@ await client.sendMessage('1234567890', 'Here are your options:', {
 
 #### Interactive Media Carousels
 
-Carousels come in two flavours — **quick-reply buttons** or **CTA URL buttons**. All cards in a carousel must use the same button type and the same media type (all images or all videos).
+Carousels come in two flavours — **quick-reply buttons** or **CTA URL buttons**. All cards in a carousel must use the same button type and count (all cards must have the same number of buttons).
 
 ```typescript
 import type { CarouselCard } from 'whatsapp-cloud-bot';
