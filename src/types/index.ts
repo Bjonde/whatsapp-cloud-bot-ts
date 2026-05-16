@@ -241,7 +241,7 @@ export interface CarouselCard<T> {
   /** Constrains which action shape is valid on this card */
   type?: 'quick_reply' | 'cta_url';
   header: {
-    type: 'image' | 'video';
+    type?: 'image' | 'video';
     image?: { link: string };
     video?: { link: string };
   };
