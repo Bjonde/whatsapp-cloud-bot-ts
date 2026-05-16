@@ -185,6 +185,78 @@ await client.sendMessage('1234567890', 'Here are your options:', {
 });
 ```
 
+#### Interactive Media Carousels
+
+Carousels come in two flavours — **quick-reply buttons** or **CTA URL buttons**. All cards in a carousel must use the same button type and the same media type (all images or all videos).
+
+```typescript
+import type { CarouselCard } from 'whatsapp-cloud-bot';
+
+// --- Quick-reply button carousel ---
+const qrCards: CarouselCard<'quick_reply'>[] = [
+  {
+    card_index: 0,
+    type: 'quick_reply',
+    header: { type: 'image', image: { link: 'https://example.com/img1.jpg' } },
+    body: { text: 'First Item — tap a button below' },
+    action: {
+      type: 'quick_reply',
+      quick_reply: { id: 'buy_1', title: 'Buy Now' },
+    },
+  },
+  {
+    card_index: 1,
+    type: 'quick_reply',
+    header: { type: 'video', video: { link: 'https://example.com/vid1.mp4' } },
+    body: { text: 'Second Item' },
+    action: {
+      type: 'quick_reply',
+      quick_reply: { id: 'buy_2', title: 'Add to Cart' },
+    },
+  },
+];
+
+await client.sendButtonCarousel('1234567890', 'Check out these items:', qrCards);
+
+// --- CTA URL button carousel ---
+const urlCards: CarouselCard<'cta_url'>[] = [
+  {
+    card_index: 0,
+    type: 'cta_url',
+    header: { type: 'image', image: { link: 'https://example.com/img1.jpg' } },
+    body: { text: 'Visit our store' },
+    action: {
+      name: 'cta_url',
+      parameters: { display_text: 'Shop Now', url: 'https://example.com/shop' },
+    },
+  },
+  {
+    card_index: 1,
+    type: 'cta_url',
+    header: { type: 'image', image: { link: 'https://example.com/img2.jpg' } },
+    body: { text: 'Read our blog' },
+    action: {
+      name: 'cta_url',
+      parameters: { display_text: 'Read More', url: 'https://example.com/blog' },
+    },
+  },
+];
+
+await client.sendUrlCarousel('1234567890', 'Explore our content:', urlCards);
+```
+
+You can also reply to an incoming message directly from a handler:
+
+```typescript
+client.onMessage(async (update) => {
+  // Quick-reply carousel reply
+  await update.replyWithButtonCarousel('Pick one:', qrCards);
+
+  // CTA URL carousel reply
+  await update.replyWithUrlCarousel('Explore:', urlCards);
+});
+```
+
 #### Media Messages
 
 ```typescript
