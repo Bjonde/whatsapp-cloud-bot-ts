@@ -219,8 +219,15 @@ export async function sendCarouselButtonMessage(
   }
 
   cards.forEach((card) => {
-    card.action.type = 'quick_reply';
     card.type = 'quick_reply';
+    card.action.type = 'quick_reply';
+    if (card.header.image) {
+      card.header.type = 'image';
+    } else if (card.header.video) {
+      card.header.type = 'video';
+    } else {
+      card.header.type = 'image';
+    }
   });
 
   return await sendInteractiveMessage(url, token, phoneNumber, text, {
