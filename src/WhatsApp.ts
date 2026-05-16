@@ -14,6 +14,8 @@ import type {
   HandlerOptions,
   InteractiveHandlerOptions,
   CarouselCard,
+  QuickReplyAction,
+  CtaUrlAction,
 } from './types/index.js';
 import { Dispatcher } from './Dispatcher.js';
 import type { Update } from './Update.js';
@@ -227,7 +229,7 @@ export class WhatsApp {
   async sendButtonCarousel(
     phoneNumber: string,
     text: string,
-    cards: CarouselCard<'quick_reply'>[]
+    cards: CarouselCard<QuickReplyAction>[]
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
 
@@ -243,7 +245,7 @@ export class WhatsApp {
   async sendUrlCarousel(
     phoneNumber: string,
     text: string,
-    cards: CarouselCard<'cta_url'>[]
+    cards: CarouselCard<CtaUrlAction>[]
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
 

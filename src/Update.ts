@@ -11,6 +11,8 @@ import type {
   SendMediaOptions,
   WhatsAppClient,
   CarouselCard,
+  QuickReplyAction,
+  CtaUrlAction,
 } from './types/index.js';
 
 /**
@@ -80,7 +82,7 @@ export class Update {
    */
   async replyWithButtonCarousel(
     text: string,
-    cards: CarouselCard<'quick_reply'>[]
+    cards: CarouselCard<QuickReplyAction>[]
   ): Promise<AxiosResponse> {
     return await this.bot.sendButtonCarousel(this.userPhoneNumber, text, cards);
   }
@@ -90,7 +92,7 @@ export class Update {
    */
   async replyWithUrlCarousel(
     text: string,
-    cards: CarouselCard<'cta_url'>[]
+    cards: CarouselCard<CtaUrlAction>[]
   ): Promise<AxiosResponse> {
     return await this.bot.sendUrlCarousel(this.userPhoneNumber, text, cards);
   }

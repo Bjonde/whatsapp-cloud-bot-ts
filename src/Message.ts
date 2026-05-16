@@ -12,7 +12,12 @@ import FormData from 'form-data';
 import { createReadStream } from 'fs';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
-import type { ReplyMarkup, CarouselCard } from './types/index.js';
+import type {
+  ReplyMarkup,
+  CtaUrlAction,
+  QuickReplyAction,
+  CarouselCard,
+} from './types/index.js';
 import { isLink, getExtensionFromMimeType } from './utils/helpers.js';
 
 const TIMEOUT = 30000; // 30 seconds
@@ -185,11 +190,16 @@ export async function sendCarouselUrlMessage(
   token: string,
   phoneNumber: string,
   text: string,
-  cards: CarouselCard<'cta_url'>[]
+  cards: CarouselCard<CtaUrlAction>[]
 ): Promise<AxiosResponse> {
   if (!cards || cards.length < 2 || cards.length > 10) {
     throw new Error('Carousel must have between 2 and 10 cards.');
   }
+
+  cards.forEach((card) => {
+    card.action.name = 'cta_url';
+    card.type = 'cta_url';
+  });
 
   return await sendInteractiveMessage(url, token, phoneNumber, text, {
     type: 'carousel',
@@ -202,11 +212,16 @@ export async function sendCarouselButtonMessage(
   token: string,
   phoneNumber: string,
   text: string,
-  cards: CarouselCard<'quick_reply'>[]
+  cards: CarouselCard<QuickReplyAction>[]
 ): Promise<AxiosResponse> {
   if (!cards || cards.length < 2 || cards.length > 10) {
     throw new Error('Carousel must have between 2 and 10 cards.');
   }
+
+  cards.forEach((card) => {
+    card.action.type = 'quick_reply';
+    card.type = 'quick_reply';
+  });
 
   return await sendInteractiveMessage(url, token, phoneNumber, text, {
     type: 'carousel',

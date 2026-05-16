@@ -217,7 +217,7 @@ export interface SendMediaOptions {
  * CTA URL button action — opens a URL when tapped.
  */
 export type CtaUrlAction = {
-  name: 'cta_url';
+  name?: 'cta_url';
   parameters?: {
     display_text: string; // 20 char max
     url: string;
@@ -228,41 +228,18 @@ export type CtaUrlAction = {
  * Quick-reply button action — sends a payload back to the bot.
  */
 export type QuickReplyAction = {
-  type: 'quick_reply';
+  type?: 'quick_reply';
   quick_reply: {
-    id: string;    // 256 char max
+    id: string; // 256 char max
     title: string; // 20 char max
   };
 };
 
-/** Discriminant → action shape lookup */
-type CarouselActionMap = {
-  cta_url: CtaUrlAction;
-  quick_reply: QuickReplyAction;
-};
 
-/** Allowed discriminant values for a carousel card */
-export type CarouselCardType = keyof CarouselActionMap; // 'cta_url' | 'quick_reply'
-
-/**
- * Generic carousel button action.
- * - `CarouselButtonAction<'cta_url'>` → `CtaUrlAction`
- * - `CarouselButtonAction<'quick_reply'>` → `QuickReplyAction`
- * - `CarouselButtonAction` (no arg) → `CtaUrlAction | QuickReplyAction`
- */
-export type CarouselButtonAction<T extends CarouselCardType = CarouselCardType> =
-  CarouselActionMap[T];
-
-/**
- * Generic carousel card.
- * - `CarouselCard<'cta_url'>` → card whose `action` is `CtaUrlAction`
- * - `CarouselCard<'quick_reply'>` → card whose `action` is `QuickReplyAction`
- * - `CarouselCard` (no arg) → accepts either action type
- */
-export interface CarouselCard<T extends CarouselCardType = CarouselCardType> {
+export interface CarouselCard<T> {
   card_index: number;
   /** Constrains which action shape is valid on this card */
-  type: T;
+  type?: 'quick_reply' | 'cta_url';
   header: {
     type: 'image' | 'video';
     image?: { link: string };
@@ -272,8 +249,10 @@ export interface CarouselCard<T extends CarouselCardType = CarouselCardType> {
   body?: {
     text: string;
   };
-  action?: CarouselButtonAction<T>;
+  action: T;
 }
+
+
 
 /**
  * User context for managing conversation state
@@ -346,13 +325,13 @@ export interface WhatsAppClient {
   sendButtonCarousel(
     phoneNumber: string,
     text: string,
-    cards: CarouselCard<'quick_reply'>[]
+    cards: CarouselCard<QuickReplyAction>[]
   ): Promise<AxiosResponse>;
 
   sendUrlCarousel(
     phoneNumber: string,
     text: string,
-    cards: CarouselCard<'cta_url'>[]
+    cards: CarouselCard<CtaUrlAction>[]
   ): Promise<AxiosResponse>;
 
   sendImage(
