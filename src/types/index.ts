@@ -229,7 +229,7 @@ export type CtaUrlAction = {
  */
 export type ButtonAction = {
   type?: 'quick_reply';
-  button_reply: {
+  quick_reply: {
     id: string; // 256 char max
     title: string; // 20 char max
   };

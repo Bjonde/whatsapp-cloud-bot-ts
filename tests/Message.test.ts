@@ -35,8 +35,12 @@ describe('Message API - Media Carousel Messages', () => {
         },
         body: { text: 'First item' },
         action: {
-          type: 'quick_reply',
-          quick_reply: { id: 'qr1', title: 'Buy Now' },
+          buttons: [
+            {
+              type: 'quick_reply',
+              quick_reply: { id: 'qr1', title: 'Buy Now' },
+            },
+          ],
         },
       },
       {
@@ -48,8 +52,12 @@ describe('Message API - Media Carousel Messages', () => {
         },
         body: { text: 'Second item' },
         action: {
-          type: 'quick_reply',
-          quick_reply: { id: 'qr2', title: 'Shop' },
+          buttons: [
+            {
+              type: 'quick_reply',
+              quick_reply: { id: 'qr2', title: 'Shop' },
+            },
+          ],
         },
       },
     ];
@@ -66,8 +74,8 @@ describe('Message API - Media Carousel Messages', () => {
     // Cards are passed through as-is — no re-mapping
     const sentCards = payload.interactive.action.cards;
     expect(sentCards).toBe(cards); // exact same reference
-    expect(sentCards[0].action.quick_reply.id).toBe('qr1');
-    expect(sentCards[1].action.quick_reply.title).toBe('Shop');
+    expect(sentCards[0].action.buttons[0].quick_reply.id).toBe('qr1');
+    expect(sentCards[1].action.buttons[0].quick_reply.title).toBe('Shop');
   });
 
   it('should pass cta_url cards through directly to the payload', async () => {
@@ -151,9 +159,7 @@ describe('Message API - Media Carousel Messages', () => {
           type: 'image',
           image: { link: 'https://example.com/img.jpg' },
         },
-        action: {
-          quick_reply: { id: 'dummy', title: 'Dummy' }
-        }
+        action: { buttons: [{ quick_reply: { id: 'dummy', title: 'Dummy' } }] },
       },
     ];
     await expect(
@@ -172,8 +178,8 @@ describe('Message API - Media Carousel Messages', () => {
           image: { link: `https://example.com/img${i}.jpg` },
         },
         action: {
-          quick_reply: { id: `dummy${i}`, title: `Dummy ${i}` }
-        }
+          buttons: [{ quick_reply: { id: `dummy${i}`, title: `Dummy ${i}` } }],
+        },
       })
     );
     await expect(
