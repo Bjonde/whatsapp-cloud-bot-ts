@@ -227,12 +227,16 @@ export type CtaUrlAction = {
 /**
  * Quick-reply button action — sends a payload back to the bot.
  */
-export type QuickReplyAction = {
+export type ButtonAction = {
   type?: 'quick_reply';
-  quick_reply: {
+  button_reply: {
     id: string; // 256 char max
     title: string; // 20 char max
   };
+};
+
+export type QuickReplyAction = {
+  buttons: ButtonAction[];
 };
 
 

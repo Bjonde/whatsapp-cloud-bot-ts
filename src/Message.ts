@@ -220,7 +220,9 @@ export async function sendCarouselButtonMessage(
 
   cards.forEach((card) => {
     card.type = 'quick_reply';
-    card.action.type = 'quick_reply';
+    card.action.buttons.forEach((btn) => {
+      btn.type = 'quick_reply';
+    });
     if (card.header.image) {
       card.header.type = 'image';
     } else if (card.header.video) {
