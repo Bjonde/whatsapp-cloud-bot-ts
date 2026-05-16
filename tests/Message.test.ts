@@ -3,7 +3,7 @@ import {
   sendCarouselButtonMessage,
   sendCarouselUrlMessage,
 } from '../src/Message.js';
-import type { CarouselCard } from '../src/types/index.js';
+import type { CarouselCard, QuickReplyAction, CtaUrlAction } from '../src/types/index.js';
 import axios from 'axios';
 
 describe('Message API - Media Carousel Messages', () => {
@@ -25,7 +25,7 @@ describe('Message API - Media Carousel Messages', () => {
   it('should pass quick-reply cards through directly to the payload', async () => {
     postSpy.mockResolvedValueOnce({ data: { message_id: 'msg123' } } as any);
 
-    const cards: CarouselCard<'quick_reply'>[] = [
+    const cards: CarouselCard<QuickReplyAction>[] = [
       {
         card_index: 0,
         type: 'quick_reply',
@@ -73,7 +73,7 @@ describe('Message API - Media Carousel Messages', () => {
   it('should pass cta_url cards through directly to the payload', async () => {
     postSpy.mockResolvedValueOnce({ data: {} } as any);
 
-    const cards: CarouselCard<'cta_url'>[] = [
+    const cards: CarouselCard<CtaUrlAction>[] = [
       {
         card_index: 0,
         type: 'cta_url',
@@ -112,10 +112,10 @@ describe('Message API - Media Carousel Messages', () => {
     expect(sentCards[1].action.parameters.display_text).toBe('Shop');
   });
 
-  it('should allow cards without an action', async () => {
+  it('should allow cards with empty action parameters', async () => {
     postSpy.mockResolvedValueOnce({ data: {} } as any);
 
-    const cards: CarouselCard<'cta_url'>[] = [
+    const cards: CarouselCard<CtaUrlAction>[] = [
       {
         card_index: 0,
         type: 'cta_url',
@@ -123,6 +123,7 @@ describe('Message API - Media Carousel Messages', () => {
           type: 'image',
           image: { link: 'https://example.com/img1.jpg' },
         },
+        action: {},
       },
       {
         card_index: 1,
@@ -131,17 +132,18 @@ describe('Message API - Media Carousel Messages', () => {
           type: 'image',
           image: { link: 'https://example.com/img2.jpg' },
         },
+        action: {},
       },
     ];
 
     await sendCarouselUrlMessage(url, token, phoneNumber, text, cards);
 
     const payload = postSpy.mock.calls[0][1] as any;
-    expect(payload.interactive.action.cards[0].action).toBeUndefined();
+    expect(payload.interactive.action.cards[0].action.name).toBe('cta_url');
   });
 
   it('should throw if fewer than 2 cards are provided', async () => {
-    const cards: CarouselCard<'quick_reply'>[] = [
+    const cards: CarouselCard<QuickReplyAction>[] = [
       {
         card_index: 0,
         type: 'quick_reply',
@@ -149,6 +151,9 @@ describe('Message API - Media Carousel Messages', () => {
           type: 'image',
           image: { link: 'https://example.com/img.jpg' },
         },
+        action: {
+          quick_reply: { id: 'dummy', title: 'Dummy' }
+        }
       },
     ];
     await expect(
@@ -157,7 +162,7 @@ describe('Message API - Media Carousel Messages', () => {
   });
 
   it('should throw if more than 10 cards are provided', async () => {
-    const cards: CarouselCard<'quick_reply'>[] = Array.from(
+    const cards: CarouselCard<QuickReplyAction>[] = Array.from(
       { length: 11 },
       (_, i) => ({
         card_index: i,
@@ -166,6 +171,9 @@ describe('Message API - Media Carousel Messages', () => {
           type: 'image' as const,
           image: { link: `https://example.com/img${i}.jpg` },
         },
+        action: {
+          quick_reply: { id: `dummy${i}`, title: `Dummy ${i}` }
+        }
       })
     );
     await expect(
