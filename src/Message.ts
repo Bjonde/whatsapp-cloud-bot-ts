@@ -12,7 +12,7 @@ import FormData from 'form-data';
 import { createReadStream } from 'fs';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
-import type { ReplyMarkup } from './types/index.js';
+import type { ReplyMarkup, CarouselCard } from './types/index.js';
 import { isLink, getExtensionFromMimeType } from './utils/helpers.js';
 
 const TIMEOUT = 30000; // 30 seconds
@@ -36,15 +36,15 @@ export async function markAsRead(
   messageId: string,
   alwaysShowTyping: boolean
 ): Promise<AxiosResponse> {
-  let payload:any = {
+  let payload: any = {
     messaging_product: 'whatsapp',
     status: 'read',
-    message_id: messageId
+    message_id: messageId,
   };
 
   if (alwaysShowTyping) {
-    payload["typing_indicator"] = {
-      "type": "text"
+    payload['typing_indicator'] = {
+      type: 'text',
     };
   }
 
@@ -53,7 +53,6 @@ export async function markAsRead(
     timeout: TIMEOUT,
   });
 }
-
 
 /**
  * Send typing indicator
@@ -64,14 +63,14 @@ export async function sendTypingIndicator(
   messageId: string,
   markAsRead: boolean
 ): Promise<AxiosResponse> {
-  let payload:any = {
+  let payload: any = {
     messaging_product: 'whatsapp',
-    message_id: messageId
+    message_id: messageId,
   };
 
   if (markAsRead) {
-    payload["typing_indicator"] = {
-      "type": "text"
+    payload['typing_indicator'] = {
+      type: 'text',
     };
   }
 
@@ -175,6 +174,43 @@ export async function sendInteractiveMessage(
   return axios.post(url, messageFrame, {
     headers: getHeaders(token),
     timeout: TIMEOUT,
+  });
+}
+
+/**
+ * Send interactive media carousel message
+ */
+export async function sendCarouselUrlMessage(
+  url: string,
+  token: string,
+  phoneNumber: string,
+  text: string,
+  cards: CarouselCard<'cta_url'>[]
+): Promise<AxiosResponse> {
+  if (!cards || cards.length < 2 || cards.length > 10) {
+    throw new Error('Carousel must have between 2 and 10 cards.');
+  }
+
+  return await sendInteractiveMessage(url, token, phoneNumber, text, {
+    type: 'carousel',
+    markup: { cards },
+  });
+}
+
+export async function sendCarouselButtonMessage(
+  url: string,
+  token: string,
+  phoneNumber: string,
+  text: string,
+  cards: CarouselCard<'quick_reply'>[]
+): Promise<AxiosResponse> {
+  if (!cards || cards.length < 2 || cards.length > 10) {
+    throw new Error('Carousel must have between 2 and 10 cards.');
+  }
+
+  return await sendInteractiveMessage(url, token, phoneNumber, text, {
+    type: 'carousel',
+    markup: { cards },
   });
 }
 
@@ -378,9 +414,6 @@ export async function downloadMediaData(
 
   return Buffer.from(response.data);
 }
-
-
-
 
 export interface MediaToDataUrlOptions {
   /**

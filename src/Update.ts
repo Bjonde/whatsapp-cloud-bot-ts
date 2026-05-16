@@ -10,6 +10,7 @@ import type {
   SendMessageOptions,
   SendMediaOptions,
   WhatsAppClient,
+  CarouselCard,
 } from './types/index.js';
 
 /**
@@ -72,6 +73,26 @@ export class Update {
       ...options,
       msgId: options.msgId || this.messageId,
     });
+  }
+
+  /**
+   * Reply with a quick-reply button carousel
+   */
+  async replyWithButtonCarousel(
+    text: string,
+    cards: CarouselCard<'quick_reply'>[]
+  ): Promise<AxiosResponse> {
+    return await this.bot.sendButtonCarousel(this.userPhoneNumber, text, cards);
+  }
+
+  /**
+   * Reply with a CTA URL carousel
+   */
+  async replyWithUrlCarousel(
+    text: string,
+    cards: CarouselCard<'cta_url'>[]
+  ): Promise<AxiosResponse> {
+    return await this.bot.sendUrlCarousel(this.userPhoneNumber, text, cards);
   }
 
   /**

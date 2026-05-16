@@ -175,7 +175,11 @@ export interface UserContextData {
 /**
  * Reply markup types
  */
-export type ReplyMarkupType = 'button' | 'list' | 'location_request_message';
+export type ReplyMarkupType =
+  | 'button'
+  | 'list'
+  | 'location_request_message'
+  | 'carousel';
 
 /**
  * Template component structure
@@ -207,6 +211,68 @@ export interface SendMediaOptions {
   msgId?: string;
   tagMessage?: boolean;
   mediaType?: 'image' | 'video' | 'audio' | 'document' | 'sticker';
+}
+
+/**
+ * CTA URL button action — opens a URL when tapped.
+ */
+export type CtaUrlAction = {
+  name: 'cta_url';
+  parameters?: {
+    display_text: string; // 20 char max
+    url: string;
+  };
+};
+
+/**
+ * Quick-reply button action — sends a payload back to the bot.
+ */
+export type QuickReplyAction = {
+  type: 'quick_reply';
+  quick_reply: {
+    id: string;    // 256 char max
+    title: string; // 20 char max
+  };
+};
+
+/** Discriminant → action shape lookup */
+type CarouselActionMap = {
+  cta_url: CtaUrlAction;
+  quick_reply: QuickReplyAction;
+};
+
+/** Allowed discriminant values for a carousel card */
+export type CarouselCardType = keyof CarouselActionMap; // 'cta_url' | 'quick_reply'
+
+/**
+ * Generic carousel button action.
+ * - `CarouselButtonAction<'cta_url'>` → `CtaUrlAction`
+ * - `CarouselButtonAction<'quick_reply'>` → `QuickReplyAction`
+ * - `CarouselButtonAction` (no arg) → `CtaUrlAction | QuickReplyAction`
+ */
+export type CarouselButtonAction<T extends CarouselCardType = CarouselCardType> =
+  CarouselActionMap[T];
+
+/**
+ * Generic carousel card.
+ * - `CarouselCard<'cta_url'>` → card whose `action` is `CtaUrlAction`
+ * - `CarouselCard<'quick_reply'>` → card whose `action` is `QuickReplyAction`
+ * - `CarouselCard` (no arg) → accepts either action type
+ */
+export interface CarouselCard<T extends CarouselCardType = CarouselCardType> {
+  card_index: number;
+  /** Constrains which action shape is valid on this card */
+  type: T;
+  header: {
+    type: 'image' | 'video';
+    image?: { link: string };
+    video?: { link: string };
+  };
+  /** Optional card body text (1024 char max, 2 line breaks) */
+  body?: {
+    text: string;
+  };
+  action?: CarouselButtonAction<T>;
 }
 
 /**
@@ -275,6 +341,18 @@ export interface WhatsAppClient {
     phoneNumber: string,
     mediaPath: string,
     options?: SendMediaOptions
+  ): Promise<AxiosResponse>;
+
+  sendButtonCarousel(
+    phoneNumber: string,
+    text: string,
+    cards: CarouselCard<'quick_reply'>[]
+  ): Promise<AxiosResponse>;
+
+  sendUrlCarousel(
+    phoneNumber: string,
+    text: string,
+    cards: CarouselCard<'cta_url'>[]
   ): Promise<AxiosResponse>;
 
   sendImage(

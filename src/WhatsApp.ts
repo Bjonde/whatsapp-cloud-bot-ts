@@ -13,6 +13,7 @@ import type {
   HandlerFunction,
   HandlerOptions,
   InteractiveHandlerOptions,
+  CarouselCard,
 } from './types/index.js';
 import { Dispatcher } from './Dispatcher.js';
 import type { Update } from './Update.js';
@@ -33,6 +34,8 @@ import {
   sendInteractiveMessage,
   sendTemplateMessage,
   sendMediaMessage,
+  sendCarouselButtonMessage,
+  sendCarouselUrlMessage,
   sendLocationMessage,
   getMediaUrl,
   downloadMedia,
@@ -94,7 +97,11 @@ export class WhatsApp {
     this.msgUrl = `${this.baseUrl}/${this.id}/messages`;
     this.mediaUrl = `${this.baseUrl}/${this.id}/media`;
 
-    this.dispatcher = new Dispatcher(this, config.markAsRead !== false, config.showTyping !== false);
+    this.dispatcher = new Dispatcher(
+      this,
+      config.markAsRead !== false,
+      config.showTyping !== false
+    );
     if (config.handlers) {
       for (const handler of Object.values(config.handlers)) {
         this.dispatcher.registerHandler(handler);
@@ -122,14 +129,20 @@ export class WhatsApp {
   /**
    * Mark message as read
    */
-  async markAsRead(message: WhatsAppMessage, showTyping: boolean): Promise<AxiosResponse> {
+  async markAsRead(
+    message: WhatsAppMessage,
+    showTyping: boolean
+  ): Promise<AxiosResponse> {
     return markMessageAsRead(this.msgUrl, this.token, message.id, showTyping);
   }
 
   /**
    * Send typing indicator
    */
-  async sendTypingIndicator(messageId: string, markAsRead: boolean = true): Promise<AxiosResponse> {
+  async sendTypingIndicator(
+    messageId: string,
+    markAsRead: boolean = true
+  ): Promise<AxiosResponse> {
     return sendTypingIndicator(this.msgUrl, this.token, messageId, markAsRead);
   }
 
@@ -205,6 +218,41 @@ export class WhatsApp {
       mediaPath,
       mediaType,
       options.caption
+    );
+  }
+
+  /**
+   * Send an interactive media carousel message
+   */
+  async sendButtonCarousel(
+    phoneNumber: string,
+    text: string,
+    cards: CarouselCard<'quick_reply'>[]
+  ): Promise<AxiosResponse> {
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+
+    return await sendCarouselButtonMessage(
+      this.msgUrl,
+      this.token,
+      formattedPhone,
+      text,
+      cards
+    );
+  }
+
+  async sendUrlCarousel(
+    phoneNumber: string,
+    text: string,
+    cards: CarouselCard<'cta_url'>[]
+  ): Promise<AxiosResponse> {
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+
+    return await sendCarouselUrlMessage(
+      this.msgUrl,
+      this.token,
+      formattedPhone,
+      text,
+      cards
     );
   }
 
