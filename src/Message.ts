@@ -196,9 +196,10 @@ export async function sendCarouselUrlMessage(
     throw new Error('Carousel must have between 2 and 10 cards.');
   }
 
-  cards.forEach((card) => {
+  cards.forEach((card, index) => {
     card.action.name = 'cta_url';
     card.type = 'cta_url';
+    card.card_index = index;
   });
 
   return await sendInteractiveMessage(url, token, phoneNumber, text, {
@@ -218,7 +219,7 @@ export async function sendCarouselButtonMessage(
     throw new Error('Carousel must have between 2 and 10 cards.');
   }
 
-  cards.forEach((card) => {
+  cards.forEach((card, index) => {
     card.type = 'cta_url';
     card.action.buttons.forEach((btn) => {
       btn.type = 'quick_reply';
@@ -230,6 +231,7 @@ export async function sendCarouselButtonMessage(
     } else {
       card.header.type = 'image';
     }
+    card.card_index = index;
   });
 
   return await sendInteractiveMessage(url, token, phoneNumber, text, {
