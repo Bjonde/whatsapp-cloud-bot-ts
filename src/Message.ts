@@ -197,7 +197,7 @@ export async function sendCarouselUrlMessage(
   }
 
   cards.forEach((card) => {
-      card.action.name = 'cta_url';
+    card.action.name = 'cta_url';
     card.type = 'cta_url';
   });
 
@@ -219,7 +219,7 @@ export async function sendCarouselButtonMessage(
   }
 
   cards.forEach((card) => {
-    card.type = 'quick_reply';
+    card.type = 'cta_url';
     card.action.buttons.forEach((btn) => {
       btn.type = 'quick_reply';
     });

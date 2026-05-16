@@ -28,7 +28,7 @@ describe('Message API - Media Carousel Messages', () => {
     const cards: CarouselCard<QuickReplyAction>[] = [
       {
         card_index: 0,
-        type: 'quick_reply',
+        type: 'cta_url',
         header: {
           type: 'image',
           image: { link: 'https://example.com/img1.jpg' },
@@ -45,7 +45,7 @@ describe('Message API - Media Carousel Messages', () => {
       },
       {
         card_index: 1,
-        type: 'quick_reply',
+        type: 'cta_url',
         header: {
           type: 'image',
           image: { link: 'https://example.com/img2.jpg' },
@@ -154,7 +154,7 @@ describe('Message API - Media Carousel Messages', () => {
     const cards: CarouselCard<QuickReplyAction>[] = [
       {
         card_index: 0,
-        type: 'quick_reply',
+        type: 'cta_url',
         header: {
           type: 'image',
           image: { link: 'https://example.com/img.jpg' },
@@ -172,7 +172,7 @@ describe('Message API - Media Carousel Messages', () => {
       { length: 11 },
       (_, i) => ({
         card_index: i,
-        type: 'quick_reply' as const,
+        type: 'cta_url' as const,
         header: {
           type: 'image' as const,
           image: { link: `https://example.com/img${i}.jpg` },

@@ -243,7 +243,7 @@ export type QuickReplyAction = {
 export interface CarouselCard<T> {
   card_index: number;
   /** Constrains which action shape is valid on this card */
-  type?: 'quick_reply' | 'cta_url';
+  type?: 'cta_url';
   header: {
     type?: 'image' | 'video';
     image?: { link: string };
