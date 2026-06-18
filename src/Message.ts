@@ -19,6 +19,7 @@ import type {
   CarouselCard,
 } from './types/index.js';
 import { isLink, getExtensionFromMimeType } from './utils/helpers.js';
+import { DEBUG } from './config.js';
 
 const TIMEOUT = 30000; // 30 seconds
 
@@ -176,6 +177,13 @@ export async function sendInteractiveMessage(
     messageFrame.interactive.footer = { text: footer };
   }
 
+  if (DEBUG) {
+    console.log(
+      'Sending interactive message:',
+      JSON.stringify(messageFrame, null, 2)
+    );
+  }
+
   return axios.post(url, messageFrame, {
     headers: getHeaders(token),
     timeout: TIMEOUT,
@@ -199,6 +207,11 @@ export async function sendCarouselUrlMessage(
   cards.forEach((card, index) => {
     card.action.name = 'cta_url';
     card.type = 'cta_url';
+    if ('video' in card.header) {
+      card.header.type = 'video';
+    } else {
+      card.header.type = 'image';
+    }
     card.card_index = index;
   });
 
@@ -224,9 +237,7 @@ export async function sendCarouselButtonMessage(
     card.action.buttons.forEach((btn) => {
       btn.type = 'quick_reply';
     });
-    if (card.header.image) {
-      card.header.type = 'image';
-    } else if (card.header.video) {
+    if ('video' in card.header) {
       card.header.type = 'video';
     } else {
       card.header.type = 'image';

@@ -214,47 +214,117 @@ export interface SendMediaOptions {
 }
 
 /**
- * CTA URL button action — opens a URL when tapped.
+ * CTA URL button action — opens a URL in the user's browser when tapped.
+ *
+ * Used as the `action` of a {@link UrlCarouselCard}.
  */
 export type CtaUrlAction = {
+  /**
+   * Action name. Auto-populated by the library to `'cta_url'` at send time —
+   * you don't need to set it.
+   */
   name?: 'cta_url';
+  /**
+   * Button label and destination URL. Optional only to allow building a card
+   * incrementally — supply both `display_text` and `url` for a working button.
+   */
   parameters?: {
-    display_text: string; // 20 char max
+    /** Text shown on the button (max 20 characters). */
+    display_text: string;
+    /** URL opened when the button is tapped. */
     url: string;
   };
 };
 
 /**
- * Quick-reply button action — sends a payload back to the bot.
+ * A single quick-reply button. Tapping it sends `quick_reply.id` back to your
+ * webhook as an interactive `button_reply`.
+ *
+ * Used inside a {@link QuickReplyAction}.
  */
 export type ButtonAction = {
+  /**
+   * Button type. Auto-populated by the library to `'quick_reply'` at send
+   * time — you don't need to set it.
+   */
   type?: 'quick_reply';
   quick_reply: {
-    id: string; // 256 char max
-    title: string; // 20 char max
+    /** Payload returned to your webhook when the button is tapped (max 256 characters). */
+    id: string;
+    /** Text shown on the button (max 20 characters). */
+    title: string;
   };
 };
 
+/**
+ * Quick-reply action for a carousel card — one or more buttons that send a
+ * payload back to the bot. Every card in the same carousel must declare the
+ * same number of buttons.
+ *
+ * Used as the `action` of a {@link ButtonCarouselCard}.
+ */
 export type QuickReplyAction = {
   buttons: ButtonAction[];
 };
 
+/**
+ * Media header for a carousel card. Provide **either** an image **or** a video
+ * link — the `type` field is auto-populated by the library at send time, so you
+ * only need to supply the media link.
+ */
+export type CarouselHeader =
+  | {
+      /** Auto-set to `'image'` by the library — you don't need to set it. */
+      type?: 'image';
+      image: { link: string };
+    }
+  | {
+      /** Auto-set to `'video'` by the library — you don't need to set it. */
+      type?: 'video';
+      video: { link: string };
+    };
 
-export interface CarouselCard<T> {
+/**
+ * A single card in an interactive media carousel.
+ *
+ * The `action` type parameter determines the card flavour:
+ * - {@link CtaUrlAction} → a CTA-URL card (see {@link UrlCarouselCard})
+ * - {@link QuickReplyAction} → a quick-reply button card (see {@link ButtonCarouselCard})
+ *
+ * `card_index` and `type` are auto-populated by the library at send time, so
+ * you normally only set `header`, `body`, and `action`.
+ *
+ * @example
+ * ```typescript
+ * const card: UrlCarouselCard = {
+ *   header: { image: { link: 'https://example.com/img.jpg' } },
+ *   body: { text: 'Visit our store' },
+ *   action: { parameters: { display_text: 'Shop Now', url: 'https://example.com' } },
+ * };
+ * ```
+ */
+export interface CarouselCard<
+  T extends QuickReplyAction | CtaUrlAction = CtaUrlAction,
+> {
+  /** Position of the card in the carousel. Auto-populated by the library. */
   card_index?: number;
-  /** Constrains which action shape is valid on this card */
+  /** Card type. Auto-populated by the library — you don't need to set it. */
   type?: 'cta_url';
-  header: {
-    type?: 'image' | 'video';
-    image?: { link: string };
-    video?: { link: string };
-  };
-  /** Optional card body text (1024 char max, 2 line breaks) */
+  /** Media header shown at the top of the card (image or video). */
+  header: CarouselHeader;
+  /** Optional card body text (max 1024 characters, up to 2 line breaks). */
   body?: {
     text: string;
   };
+  /** The card's button action (CTA URL or quick-reply buttons). */
   action: T;
 }
+
+/** A carousel card whose button opens a URL (CTA URL). */
+export type UrlCarouselCard = CarouselCard<CtaUrlAction>;
+
+/** A carousel card with one or more quick-reply buttons. */
+export type ButtonCarouselCard = CarouselCard<QuickReplyAction>;
 
 
 
