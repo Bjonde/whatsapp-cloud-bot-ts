@@ -43,6 +43,7 @@ export interface WebhookPayload {
  */
 export type MessageType =
   | 'text'
+  | 'button'
   | 'interactive'
   | 'image'
   | 'audio'
@@ -64,6 +65,10 @@ export interface WhatsAppMessage {
   type: MessageType;
   text?: {
     body: string;
+  };
+  button?: {
+    payload: string;
+    text: string;
   };
   interactive?: {
     type: 'button_reply' | 'list_reply';
@@ -110,6 +115,10 @@ export interface MediaObject {
  */
 export interface UpdateData {
   messageText: string;
+  button?: {
+    payload: string;
+    text: string;
+  };
   listReply?: {
     id: string;
     title: string;
@@ -453,6 +462,7 @@ export interface WhatsAppClient {
 
   // Handler registration methods
   onMessage(action: HandlerFunction, options?: HandlerOptions): void;
+  onButtonMessage(action: HandlerFunction, options?: HandlerOptions): void;
   onInteractiveMessage(
     action: HandlerFunction,
     options?: InteractiveHandlerOptions

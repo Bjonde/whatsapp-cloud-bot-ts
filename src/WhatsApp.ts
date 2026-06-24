@@ -22,6 +22,7 @@ import type { Update } from './Update.js';
 import type { UpdateHandler } from './Handlers.js';
 import {
   MessageHandler,
+  ButtonHandler,
   InteractiveQueryHandler,
   ImageHandler,
   AudioHandler,
@@ -45,6 +46,8 @@ import {
   sendTypingIndicator,
 } from './Message.js';
 import { formatPhoneNumber } from './utils/helpers.js';
+
+
 
 /**
  * WhatsApp Client Configuration
@@ -372,6 +375,14 @@ export class WhatsApp {
    */
   onMessage(action: HandlerFunction, options: HandlerOptions = {}): void {
     const handler = new MessageHandler(action, options);
+    this.dispatcher.registerHandler(handler);
+  }
+
+  /**
+   * Register button message handler
+   */
+  onButtonMessage(action: HandlerFunction, options: HandlerOptions = {}): void {
+    const handler = new ButtonHandler(action, options);
     this.dispatcher.registerHandler(handler);
   }
 

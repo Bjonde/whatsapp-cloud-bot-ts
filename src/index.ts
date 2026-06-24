@@ -22,6 +22,7 @@ export { Dispatcher } from './Dispatcher.js';
 export {
   UpdateHandler,
   MessageHandler,
+  ButtonHandler,
   InteractiveQueryHandler,
   ImageHandler,
   AudioHandler,

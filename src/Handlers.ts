@@ -95,6 +95,37 @@ export class MessageHandler extends UpdateHandler {
 }
 
 /**
+ * Button Handler
+ * Handles button and list replies
+ */
+export class ButtonHandler extends UpdateHandler {
+  constructor(
+    action: HandlerFunction,
+    options:HandlerOptions = {}
+  ) {
+    super('button', action, options);
+  }
+
+  extractData(message: WhatsAppMessage): UpdateData {
+    const data: UpdateData = {
+      messageText: '',
+    };
+
+    if (!message.button) {
+      return data;
+    }
+    data.messageText = message.button.payload;
+    data.button = message.button;
+
+    return data;
+  }
+}
+
+
+
+
+
+/**
  * Interactive Query Handler
  * Handles button and list replies
  */
