@@ -16,7 +16,7 @@ Looking for Python? A Python version exists here: [python-whatsapp-bot](https://
 🎯 **Event-Driven** - Elegant handler-based message routing
 💬 **Interactive Messages** - Support for buttons, lists, and location requests
 📸 **Media Support** - Send and receive images, videos, audio, documents, and stickers
-🔄 **Conversation Flow** - Built-in context management and next-step handlers
+🔄 **Conversation Flow** - Next-step handlers (bring your own store for state)
 🧪 **Well Tested** - Comprehensive test suite included
 📚 **Great Documentation** - Detailed guides and API reference
 
@@ -432,20 +432,27 @@ client.onMessageStatus(handler, { status: 'failed', ignoreAfterMinutes: 10 });
 
 ### Conversation Flow Management
 
-#### Using Context
+#### Tracking conversation state (bring your own store)
+
+> **Deprecated:** the built-in in-memory `context` parameter has been **removed**. It grew unbounded and didn't work across multiple processes/instances. The `context` argument is still accepted in handler signatures (for source compatibility) but is always `undefined`. Manage state in your own store, keyed by `update.userPhoneNumber`.
 
 ```typescript
-client.onMessage(async (update, context) => {
-  if (!context.has('name')) {
-    context.set('name', update.messageText);
+// e.g. a Redis/Postgres/Map you own and can evict/expire
+const store = new Map<string, { name?: string; age?: number }>();
+
+client.onMessage(async (update) => {
+  const state = store.get(update.userPhoneNumber) ?? {};
+
+  if (!state.name) {
+    state.name = update.messageText;
     await update.replyMessage('Nice to meet you! How old are you?');
-  } else if (!context.has('age')) {
-    context.set('age', parseInt(update.messageText));
-    const name = context.get('name');
-    const age = context.get('age');
-    await update.replyMessage(`Hello ${name}, you are ${age} years old!`);
-    context.clear(); // Reset conversation
+  } else if (!state.age) {
+    state.age = parseInt(update.messageText);
+    await update.replyMessage(`Hello ${state.name}, you are ${state.age}!`);
+    store.delete(update.userPhoneNumber); // reset conversation
+    return;
   }
+  store.set(update.userPhoneNumber, state);
 });
 ```
 
@@ -551,23 +558,9 @@ interface Update {
 }
 ```
 
-### UserContext Object
+### UserContext Object (deprecated)
 
-Available in all handler functions as the second parameter:
-
-```typescript
-interface UserContext {
-  userData: Record<string, any>;
-
-  set(key: string, value: any): void;
-  get<T>(key: string, defaultValue?: T): T | undefined;
-  has(key: string): boolean;
-  delete(key: string): void;
-  clear(): void;
-  keys(): string[];
-  size(): number;
-}
-```
+> **Deprecated and no longer injected.** The built-in in-memory context store has been removed. The `context` second parameter of handlers is always `undefined`; the `UserContext` class remains exported only so existing imports keep compiling, but it no longer persists anything. Track conversation state in your own store keyed by `update.userPhoneNumber` (see _Tracking conversation state_ above).
 
 ## TypeScript Usage
 
@@ -664,11 +657,12 @@ app.listen(3000, () => {
    });
    ```
 
-3. **Use Context for Stateful Conversations**:
+3. **Track Conversation State in Your Own Store** (the built-in in-memory context is deprecated/removed):
    ```typescript
-   client.onMessage(async (update, context) => {
-     if (!context.has('started')) {
-       context.set('started', true);
+   const started = new Set<string>(); // or Redis/Postgres in production
+   client.onMessage(async (update) => {
+     if (!started.has(update.userPhoneNumber)) {
+       started.add(update.userPhoneNumber);
        await update.replyMessage('Welcome! What is your name?');
      }
    });

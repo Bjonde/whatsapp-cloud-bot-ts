@@ -213,10 +213,16 @@ export interface UpdateData {
 }
 
 /**
- * Handler function types
+ * Handler function types.
+ *
+ * @remarks The second `context` argument is **deprecated** and is always
+ * `undefined` at runtime — the in-memory user context has been removed. Manage
+ * conversation state in your own store keyed by `update.userPhoneNumber`. The
+ * parameter is retained only so existing handler signatures keep compiling.
  */
 export type HandlerFunction = (
   update: Update,
+  /** @deprecated Always `undefined`. See {@link UserContext}. */
   context?: UserContext
 ) => void | Promise<void>;
 export type FilterFunction = (text: string) => boolean;
@@ -252,6 +258,10 @@ export interface StatusHandlerOptions {
 export interface HandlerOptions {
   regex?: RegExp;
   filter?: FilterFunction;
+  /**
+   * @deprecated No effect. The in-memory user context has been removed, so no
+   * context is ever injected into handlers regardless of this flag.
+   */
   context?: boolean;
   persistent?: boolean;
   /**
@@ -455,7 +465,10 @@ export type ButtonCarouselCard = CarouselCard<QuickReplyAction>;
 
 
 /**
- * User context for managing conversation state
+ * User context for managing conversation state.
+ *
+ * @deprecated The in-memory context store has been removed; handlers no longer
+ * receive a context. Retained only for backwards-compatible type references.
  */
 export interface UserContext {
   userData: UserContextData;

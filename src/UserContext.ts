@@ -1,178 +1,78 @@
 /**
  * User Context Management
- * Manages user-specific data in conversations
+ *
+ * @deprecated The built-in in-memory context store has been **removed**. It grew
+ * unbounded (one entry per user, never evicted) and did not work across
+ * multiple processes/instances. The `context` parameter passed to handlers is
+ * now always `undefined`.
+ *
+ * Manage conversation state in your own store (e.g. Redis/Postgres), keyed by
+ * the user's phone number (`update.userPhoneNumber`). The exports below remain
+ * only so existing imports keep compiling and will be removed in a future
+ * major version.
  */
 
 import type { UserContextData } from './types/index.js';
 
 /**
- * Global context storage for all users
- */
-class ContextStore {
-  private usersData: Map<string, UserContextData> = new Map();
-
-  /**
-   * Add a new user to the context store
-   * @param phoneNumber - User's phone number
-   */
-  addUser(phoneNumber: string): void {
-    if (!this.usersData.has(phoneNumber)) {
-      this.usersData.set(phoneNumber, {});
-    }
-  }
-
-  /**
-   * Check if user exists in context store
-   * @param phoneNumber - User's phone number
-   * @returns true if user exists
-   */
-  userExists(phoneNumber: string): boolean {
-    return this.usersData.has(phoneNumber);
-  }
-
-  /**
-   * Get user data from context store
-   * @param phoneNumber - User's phone number
-   * @returns User's context data
-   */
-  getUserData(phoneNumber: string): UserContextData {
-    if (!this.userExists(phoneNumber)) {
-      this.addUser(phoneNumber);
-    }
-    return this.usersData.get(phoneNumber)!;
-  }
-
-  /**
-   * Clear user data from context store
-   * @param phoneNumber - User's phone number
-   */
-  clearUser(phoneNumber: string): void {
-    this.usersData.delete(phoneNumber);
-  }
-
-  /**
-   * Clear all users data
-   */
-  clearAll(): void {
-    this.usersData.clear();
-  }
-
-  /**
-   * Get all users phone numbers
-   * @returns Array of phone numbers
-   */
-  getAllUsers(): string[] {
-    return Array.from(this.usersData.keys());
-  }
-}
-
-// Global context store instance
-const contextStore = new ContextStore();
-
-/**
- * User Context Class
- * Manages a specific user's data in a conversation
- * The user's phone number is used as the unique identifier
- *
- * @example
- * ```typescript
- * const context = new UserContext('1234567890');
- * context.userData.step = 1;
- * context.userData.name = 'John';
- * ```
+ * @deprecated In-memory, non-persistent scratch space. The library no longer
+ * creates or injects this. State stored here is local to the instance and is
+ * **not** shared across messages or persisted anywhere. Use your own store.
  */
 export class UserContext {
-  /**
-   * User's context data storage
-   */
-  public userData: UserContextData;
+  /** Instance-local data bag. */
+  public userData: UserContextData = {};
 
-  /**
-   * User's phone number (identifier)
-   */
-  private phoneNumber: string;
+  // The phone number is accepted for constructor-signature compatibility only.
+  constructor(_phoneNumber?: string) {}
 
-  /**
-   * Creates a new UserContext instance
-   * @param phoneNumber - User's phone number
-   */
-  constructor(phoneNumber: string) {
-    this.phoneNumber = phoneNumber;
-    this.userData = contextStore.getUserData(phoneNumber);
-  }
-
-  /**
-   * Set a value in user context
-   * @param key - Context key
-   * @param value - Value to store
-   */
+  /** @deprecated Sets a value on this instance only. */
   set(key: string, value: any): void {
     this.userData[key] = value;
   }
 
-  /**
-   * Get a value from user context
-   * @param key - Context key
-   * @param defaultValue - Default value if key doesn't exist
-   * @returns Stored value or default value
-   */
+  /** @deprecated Reads a value from this instance only. */
   get<T = any>(key: string, defaultValue?: T): T | undefined {
     return this.userData[key] !== undefined ? this.userData[key] : defaultValue;
   }
 
-  /**
-   * Check if key exists in user context
-   * @param key - Context key
-   * @returns true if key exists
-   */
+  /** @deprecated */
   has(key: string): boolean {
     return key in this.userData;
   }
 
-  /**
-   * Delete a key from user context
-   * @param key - Context key
-   */
+  /** @deprecated */
   delete(key: string): void {
     delete this.userData[key];
   }
 
-  /**
-   * Clear all user context data
-   */
+  /** @deprecated Clears this instance's data. */
   clear(): void {
-    contextStore.clearUser(this.phoneNumber);
-    this.userData = contextStore.getUserData(this.phoneNumber);
+    this.userData = {};
   }
 
-  /**
-   * Get all keys in user context
-   * @returns Array of keys
-   */
+  /** @deprecated */
   keys(): string[] {
     return Object.keys(this.userData);
   }
 
-  /**
-   * Get number of items in user context
-   * @returns Number of items
-   */
+  /** @deprecated */
   size(): number {
     return Object.keys(this.userData).length;
   }
 }
 
 /**
- * Clear all users context data (useful for testing)
+ * @deprecated No-op. The global context store has been removed.
  */
 export function clearAllContexts(): void {
-  contextStore.clearAll();
+  // no-op — retained for backwards compatibility
 }
 
 /**
- * Get all users with active contexts
- * @returns Array of phone numbers
+ * @deprecated Always returns an empty array. The global context store has been
+ * removed.
  */
 export function getAllContextUsers(): string[] {
-  return contextStore.getAllUsers();
+  return [];
 }
