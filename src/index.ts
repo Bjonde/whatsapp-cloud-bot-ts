@@ -11,6 +11,7 @@ export type { WhatsAppConfig } from './WhatsApp.js';
 
 // Core Classes
 export { Update } from './Update.js';
+export { StatusUpdate } from './StatusUpdate.js';
 export {
   UserContext,
   clearAllContexts,
@@ -50,6 +51,7 @@ export * from './types/index.js';
 
 // Utilities
 export * from './utils/helpers.js';
+export * from './utils/uploadHelper.js';
 
 // Default export
 export { WhatsApp as default } from './WhatsApp.js';

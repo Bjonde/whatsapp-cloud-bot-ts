@@ -98,9 +98,15 @@ export async function sendTextMessage(
     msgId?: string;
     webPagePreview?: boolean;
     tagMessage?: boolean;
+    bizOpaqueCallbackData?: string;
   } = {}
 ): Promise<AxiosResponse> {
-  const { msgId, webPagePreview = true, tagMessage = true } = options;
+  const {
+    msgId,
+    webPagePreview = true,
+    tagMessage = true,
+    bizOpaqueCallbackData,
+  } = options;
 
   const messageFrame: any = {
     messaging_product: 'whatsapp',
@@ -115,6 +121,10 @@ export async function sendTextMessage(
 
   if (msgId && tagMessage) {
     messageFrame.context = { message_id: msgId };
+  }
+
+  if (bizOpaqueCallbackData) {
+    messageFrame.biz_opaque_callback_data = bizOpaqueCallbackData;
   }
 
   return axios.post(url, messageFrame, {
@@ -137,9 +147,16 @@ export async function sendInteractiveMessage(
     header?: string;
     headerType?: 'text' | 'image' | 'video' | 'document';
     footer?: string;
+    bizOpaqueCallbackData?: string;
   } = {}
 ): Promise<AxiosResponse> {
-  const { msgId, header, headerType = 'text', footer } = options;
+  const {
+    msgId,
+    header,
+    headerType = 'text',
+    footer,
+    bizOpaqueCallbackData,
+  } = options;
 
   const messageFrame: any = {
     messaging_product: 'whatsapp',
@@ -177,6 +194,10 @@ export async function sendInteractiveMessage(
     messageFrame.interactive.footer = { text: footer };
   }
 
+  if (bizOpaqueCallbackData) {
+    messageFrame.biz_opaque_callback_data = bizOpaqueCallbackData;
+  }
+
   if (DEBUG) {
     console.log(
       'Sending interactive message:',
@@ -198,7 +219,8 @@ export async function sendCarouselUrlMessage(
   token: string,
   phoneNumber: string,
   text: string,
-  cards: CarouselCard<CtaUrlAction>[]
+  cards: CarouselCard<CtaUrlAction>[],
+  bizOpaqueCallbackData?: string
 ): Promise<AxiosResponse> {
   if (!cards || cards.length < 2 || cards.length > 10) {
     throw new Error('Carousel must have between 2 and 10 cards.');
@@ -215,10 +237,17 @@ export async function sendCarouselUrlMessage(
     card.card_index = index;
   });
 
-  return await sendInteractiveMessage(url, token, phoneNumber, text, {
-    type: 'carousel',
-    markup: { cards },
-  });
+  return await sendInteractiveMessage(
+    url,
+    token,
+    phoneNumber,
+    text,
+    {
+      type: 'carousel',
+      markup: { cards },
+    },
+    { bizOpaqueCallbackData }
+  );
 }
 
 export async function sendCarouselButtonMessage(
@@ -226,7 +255,8 @@ export async function sendCarouselButtonMessage(
   token: string,
   phoneNumber: string,
   text: string,
-  cards: CarouselCard<QuickReplyAction>[]
+  cards: CarouselCard<QuickReplyAction>[],
+  bizOpaqueCallbackData?: string
 ): Promise<AxiosResponse> {
   if (!cards || cards.length < 2 || cards.length > 10) {
     throw new Error('Carousel must have between 2 and 10 cards.');
@@ -245,10 +275,17 @@ export async function sendCarouselButtonMessage(
     card.card_index = index;
   });
 
-  return await sendInteractiveMessage(url, token, phoneNumber, text, {
-    type: 'carousel',
-    markup: { cards },
-  });
+  return await sendInteractiveMessage(
+    url,
+    token,
+    phoneNumber,
+    text,
+    {
+      type: 'carousel',
+      markup: { cards },
+    },
+    { bizOpaqueCallbackData }
+  );
 }
 
 /**
@@ -260,9 +297,10 @@ export async function sendTemplateMessage(
   phoneNumber: string,
   templateName: string,
   components: any[] = [],
-  languageCode: string = 'en_US'
+  languageCode: string = 'en_US',
+  bizOpaqueCallbackData?: string
 ): Promise<AxiosResponse> {
-  const payload = {
+  const payload: any = {
     messaging_product: 'whatsapp',
     to: phoneNumber,
     recipient_type: 'individual',
@@ -273,6 +311,10 @@ export async function sendTemplateMessage(
       components: components,
     },
   };
+
+  if (bizOpaqueCallbackData) {
+    payload.biz_opaque_callback_data = bizOpaqueCallbackData;
+  }
 
   return axios.post(url, payload, {
     headers: getHeaders(token),
@@ -289,7 +331,8 @@ export async function sendMediaMessage(
   phoneNumber: string,
   mediaPath: string,
   mediaType: 'image' | 'video' | 'audio' | 'document' | 'sticker' = 'image',
-  caption?: string
+  caption?: string,
+  bizOpaqueCallbackData?: string
 ): Promise<AxiosResponse> {
   const payload: any = {
     messaging_product: 'whatsapp',
@@ -300,6 +343,10 @@ export async function sendMediaMessage(
       ? { link: mediaPath, caption }
       : { id: mediaPath, caption },
   };
+
+  if (bizOpaqueCallbackData) {
+    payload.biz_opaque_callback_data = bizOpaqueCallbackData;
+  }
 
   return axios.post(url, payload, {
     headers: getHeaders(token),
@@ -317,7 +364,8 @@ export async function sendLocationMessage(
   latitude: number,
   longitude: number,
   name?: string,
-  address?: string
+  address?: string,
+  bizOpaqueCallbackData?: string
 ): Promise<AxiosResponse> {
   const locationData: any = {
     latitude: latitude.toString(),
@@ -327,13 +375,17 @@ export async function sendLocationMessage(
   if (name) locationData.name = name;
   if (address) locationData.address = address;
 
-  const payload = {
+  const payload: any = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
     to: phoneNumber,
     type: 'location',
     location: locationData,
   };
+
+  if (bizOpaqueCallbackData) {
+    payload.biz_opaque_callback_data = bizOpaqueCallbackData;
+  }
 
   return axios.post(url, payload, {
     headers: getHeaders(token),

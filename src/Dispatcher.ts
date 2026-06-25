@@ -8,72 +8,88 @@ import type {
   WebhookValue,
   NextStepConfig,
   WhatsAppClient,
+  StatusHandlerFunction,
+  StatusHandlerOptions,
+  MessageStatusType,
 } from './types/index.js';
 import { Update } from './Update.js';
+import { StatusUpdate } from './StatusUpdate.js';
 import { UserContext } from './UserContext.js';
 import type { UpdateHandler } from './Handlers.js';
 import { MessageHandler } from './Handlers.js';
-import { keysExist } from './utils/helpers.js';
-
-/**
- * Async Queue for processing updates
- */
-class AsyncQueue<T> {
-  private queue: T[] = [];
-  private processing = false;
-
-  async enqueue(item: T, processor: (item: T) => Promise<void>): Promise<void> {
-    this.queue.push(item);
-    if (!this.processing) {
-      await this.processQueue(processor);
-    }
-  }
-
-  private async processQueue(
-    processor: (item: T) => Promise<void>
-  ): Promise<void> {
-    this.processing = true;
-    while (this.queue.length > 0) {
-      const item = this.queue.shift();
-      if (item) {
-        await processor(item);
-      }
-    }
-    this.processing = false;
-  }
-
-  get size(): number {
-    return this.queue.length;
-  }
-
-  get isProcessing(): boolean {
-    return this.processing;
-  }
-}
+import { isOlderThanMinutes } from './utils/helpers.js';
 
 /**
  * Dispatcher class - manages message routing and handler execution
  */
 export class Dispatcher {
   private bot: WhatsAppClient;
-  private queue: AsyncQueue<WebhookPayload>;
+  /**
+   * Per-phone-number processing chains. Updates for the same number are
+   * processed serially (chained); different numbers run concurrently.
+   */
+  private chains: Map<string, Promise<void>> = new Map();
+  private inFlight = 0;
   private registeredHandlers: UpdateHandler[] = [];
+  private statusHandlers: Array<{
+    action: StatusHandlerFunction;
+    statuses?: MessageStatusType[];
+    ignoreAfterMinutes?: number;
+  }> = [];
   private markAsRead: boolean;
   private showTyping: boolean;
   private nextStepHandlers: Map<string, NextStepConfig> = new Map();
 
   constructor(bot: WhatsAppClient, markAsRead: boolean = true, showTyping: boolean = false) {
     this.bot = bot;
-    this.queue = new AsyncQueue<WebhookPayload>();
     this.markAsRead = markAsRead;
     this.showTyping = showTyping;
   }
 
   /**
-   * Process incoming webhook update
+   * Process an incoming webhook update.
+   *
+   * Updates for the same phone number are processed serially (so conversation
+   * state such as {@link setNextStep} and per-user context stays ordered),
+   * while updates for different numbers are processed concurrently.
+   *
+   * The returned promise resolves (or rejects) with this update's own outcome;
+   * a failure in one update never blocks subsequent updates for that number.
    */
   async processUpdate(update: WebhookPayload): Promise<void> {
-    await this.queue.enqueue(update, this.processQueueItem.bind(this));
+    const key = this.serializationKey(update);
+    const previous = this.chains.get(key) ?? Promise.resolve();
+
+    const run = previous.then(() => this.processQueueItem(update));
+    // The stored chain must never reject, or a thrown handler would break
+    // serialization for every later update from the same number.
+    const chained = run.catch(() => {});
+    this.chains.set(key, chained);
+    this.inFlight++;
+
+    try {
+      await run;
+    } finally {
+      this.inFlight--;
+      // Drop the key once this is the tail of its chain, to avoid leaking a
+      // map entry per phone number seen.
+      if (this.chains.get(key) === chained) {
+        this.chains.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Derive the serialization key for an update — the user's phone number, so
+   * all events (messages and statuses) for one number share a chain.
+   */
+  private serializationKey(payload: WebhookPayload): string {
+    const value = payload.entry?.[0]?.changes?.[0]?.value;
+    return (
+      value?.messages?.[0]?.from ??
+      value?.statuses?.[0]?.recipient_id ??
+      '__default__'
+    );
   }
 
   /**
@@ -82,13 +98,10 @@ export class Dispatcher {
   private async processQueueItem(
     webhookPayload: WebhookPayload
   ): Promise<void> {
-    if (!keysExist(webhookPayload, 'entry', 0, 'changes', 0, 'value')) {
-      return;
-    }
+    const value: WebhookValue | undefined =
+      webhookPayload.entry?.[0]?.changes?.[0]?.value;
 
-    const value: WebhookValue = webhookPayload.entry[0].changes[0].value;
-
-    if (!keysExist(value, 'metadata', 'phone_number_id')) {
+    if (!value?.metadata?.phone_number_id) {
       return;
     }
 
@@ -96,11 +109,17 @@ export class Dispatcher {
       return;
     }
 
-    if (!keysExist(value, 'messages')) {
+    // Status webhooks carry delivery receipts (sent/delivered/read/failed),
+    // not inbound messages — route them to the registered status handlers.
+    if (value.statuses && value.statuses.length > 0) {
+      await this.dispatchStatuses(value);
       return;
     }
 
-    const message = value.messages![0];
+    const message = value.messages?.[0];
+    if (!message) {
+      return;
+    }
 
     // Mark message as read if enabled
     if (this.markAsRead) {
@@ -179,6 +198,14 @@ export class Dispatcher {
       return false;
     }
 
+    // Skip stale messages if the handler opted into an age limit
+    if (
+      handler.ignoreAfterMinutes !== undefined &&
+      isOlderThanMinutes(message.timestamp, handler.ignoreAfterMinutes)
+    ) {
+      return false;
+    }
+
     // Check filter
     if (!handler.filterCheck(messageText)) {
       return false;
@@ -203,11 +230,63 @@ export class Dispatcher {
   }
 
   /**
+   * Dispatch each status in a `statuses` webhook to the registered status
+   * handlers. Errors thrown by a handler are swallowed so that one failing
+   * handler cannot block the others.
+   */
+  private async dispatchStatuses(value: WebhookValue): Promise<void> {
+    if (this.statusHandlers.length === 0 || !value.statuses) {
+      return;
+    }
+
+    for (const status of value.statuses) {
+      const statusUpdate = new StatusUpdate(this.bot, value, status);
+
+      for (const handler of this.statusHandlers) {
+        if (handler.statuses && !handler.statuses.includes(status.status)) {
+          continue;
+        }
+        if (
+          handler.ignoreAfterMinutes !== undefined &&
+          isOlderThanMinutes(status.timestamp, handler.ignoreAfterMinutes)
+        ) {
+          continue;
+        }
+        try {
+          await handler.action(statusUpdate);
+        } catch {
+          // A failing status handler must not break others or stall the queue
+        }
+      }
+    }
+  }
+
+  /**
    * Register a handler
    */
   registerHandler(handler: UpdateHandler): number {
     this.registeredHandlers.push(handler);
     return this.registeredHandlers.length - 1;
+  }
+
+  /**
+   * Register a message-status handler
+   */
+  registerStatusHandler(
+    action: StatusHandlerFunction,
+    options: StatusHandlerOptions = {}
+  ): void {
+    const statuses = options.status
+      ? Array.isArray(options.status)
+        ? options.status
+        : [options.status]
+      : undefined;
+
+    this.statusHandlers.push({
+      action,
+      statuses,
+      ignoreAfterMinutes: options.ignoreAfterMinutes,
+    });
   }
 
   /**
@@ -259,12 +338,16 @@ export class Dispatcher {
   }
 
   /**
-   * Get queue status
+   * Get processing status.
+   *
+   * `size` is the number of updates currently being processed (in flight
+   * across all phone-number chains); `isProcessing` is true while any update
+   * is in flight.
    */
   getQueueStatus(): { size: number; isProcessing: boolean } {
     return {
-      size: this.queue.size,
-      isProcessing: this.queue.isProcessing,
+      size: this.inFlight,
+      isProcessing: this.inFlight > 0,
     };
   }
 }
