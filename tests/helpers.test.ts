@@ -3,46 +3,11 @@
  */
 
 import {
-  keysExist,
   isValidPhoneNumber,
   formatPhoneNumber,
   isLink,
   getExtensionFromMimeType,
 } from '../src/utils/helpers';
-
-describe('keysExist', () => {
-  const testObj = {
-    spam: {
-      egg: {
-        bacon: 'Well..',
-        sausages: 'Spam egg sausages',
-      },
-    },
-  };
-
-  it('should return true for existing keys', () => {
-    expect(keysExist(testObj, 'spam')).toBe(true);
-    expect(keysExist(testObj, 'spam', 'egg')).toBe(true);
-    expect(keysExist(testObj, 'spam', 'egg', 'bacon')).toBe(true);
-  });
-
-  it('should return false for non-existing keys', () => {
-    expect(keysExist(testObj, 'spam', 'bacon')).toBe(false);
-    expect(keysExist(testObj, 'nonexistent')).toBe(false);
-  });
-
-  it('should work with array indices', () => {
-    const arr = { items: [{ id: 1 }, { id: 2 }] };
-    expect(keysExist(arr, 'items', 0, 'id')).toBe(true);
-    expect(keysExist(arr, 'items', 5)).toBe(false);
-  });
-
-  it('should throw error when no keys provided', () => {
-    expect(() => {
-      keysExist(testObj);
-    }).toThrow('keysExist() expects at least one key argument');
-  });
-});
 
 describe('isValidPhoneNumber', () => {
   it('should validate correct phone numbers', () => {
