@@ -3,6 +3,7 @@
  * Process different types of incoming messages
  */
 
+import { DEFAULT_IGNORE_AFTER_MINUTES } from './config.js';
 import type {
   UpdateData,
   WhatsAppMessage,
@@ -25,6 +26,7 @@ export abstract class UpdateHandler {
   public action: HandlerFunction;
   public context: boolean;
   public persistent: boolean;
+  public ignoreAfterMinutes?: number;
 
   constructor(
     name: MessageType,
@@ -35,6 +37,8 @@ export abstract class UpdateHandler {
     this.action = action;
     this.context = options.context !== false;
     this.persistent = options.persistent || false;
+    this.ignoreAfterMinutes =
+      options.ignoreAfterMinutes || DEFAULT_IGNORE_AFTER_MINUTES;
 
     if (options.regex) {
       this.regex =

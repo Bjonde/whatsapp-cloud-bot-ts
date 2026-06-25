@@ -13,6 +13,8 @@ import type {
   HandlerFunction,
   HandlerOptions,
   InteractiveHandlerOptions,
+  StatusHandlerFunction,
+  StatusHandlerOptions,
   CarouselCard,
   QuickReplyAction,
   CtaUrlAction,
@@ -173,6 +175,7 @@ export class WhatsApp {
           header: options.header,
           headerType: options.headerType,
           footer: options.footer,
+          bizOpaqueCallbackData: options.bizOpaqueCallbackData,
         }
       );
     }
@@ -181,6 +184,7 @@ export class WhatsApp {
       msgId: options.msgId,
       webPagePreview: options.webPagePreview,
       tagMessage: options.tagMessage,
+      bizOpaqueCallbackData: options.bizOpaqueCallbackData,
     });
   }
 
@@ -191,7 +195,8 @@ export class WhatsApp {
     phoneNumber: string,
     templateName: string,
     components: TemplateComponent[] = [],
-    languageCode: string = 'en_US'
+    languageCode: string = 'en_US',
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
 
@@ -201,7 +206,8 @@ export class WhatsApp {
       formattedPhone,
       templateName,
       components,
-      languageCode
+      languageCode,
+      bizOpaqueCallbackData
     );
   }
 
@@ -222,7 +228,8 @@ export class WhatsApp {
       formattedPhone,
       mediaPath,
       mediaType,
-      options.caption
+      options.caption,
+      options.bizOpaqueCallbackData
     );
   }
 
@@ -232,7 +239,8 @@ export class WhatsApp {
   async sendButtonCarousel(
     phoneNumber: string,
     text: string,
-    cards: CarouselCard<QuickReplyAction>[]
+    cards: CarouselCard<QuickReplyAction>[],
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
 
@@ -241,14 +249,16 @@ export class WhatsApp {
       this.token,
       formattedPhone,
       text,
-      cards
+      cards,
+      bizOpaqueCallbackData
     );
   }
 
   async sendUrlCarousel(
     phoneNumber: string,
     text: string,
-    cards: CarouselCard<CtaUrlAction>[]
+    cards: CarouselCard<CtaUrlAction>[],
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
 
@@ -257,7 +267,8 @@ export class WhatsApp {
       this.token,
       formattedPhone,
       text,
-      cards
+      cards,
+      bizOpaqueCallbackData
     );
   }
 
@@ -267,9 +278,13 @@ export class WhatsApp {
   async sendImage(
     phoneNumber: string,
     imagePath: string,
-    caption?: string
+    caption?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
-    return this.sendMediaMessage(phoneNumber, imagePath, { caption });
+    return this.sendMediaMessage(phoneNumber, imagePath, {
+      caption,
+      bizOpaqueCallbackData,
+    });
   }
 
   /**
@@ -278,7 +293,8 @@ export class WhatsApp {
   async sendVideo(
     phoneNumber: string,
     videoPath: string,
-    caption?: string
+    caption?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
     return sendMediaMessage(
@@ -287,7 +303,8 @@ export class WhatsApp {
       formattedPhone,
       videoPath,
       'video',
-      caption
+      caption,
+      bizOpaqueCallbackData
     );
   }
 
@@ -296,7 +313,8 @@ export class WhatsApp {
    */
   async sendAudio(
     phoneNumber: string,
-    audioPath: string
+    audioPath: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
     return sendMediaMessage(
@@ -304,7 +322,9 @@ export class WhatsApp {
       this.token,
       formattedPhone,
       audioPath,
-      'audio'
+      'audio',
+      undefined,
+      bizOpaqueCallbackData
     );
   }
 
@@ -314,7 +334,8 @@ export class WhatsApp {
   async sendDocument(
     phoneNumber: string,
     documentPath: string,
-    caption?: string
+    caption?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
     return sendMediaMessage(
@@ -323,7 +344,8 @@ export class WhatsApp {
       formattedPhone,
       documentPath,
       'document',
-      caption
+      caption,
+      bizOpaqueCallbackData
     );
   }
 
@@ -335,7 +357,8 @@ export class WhatsApp {
     latitude: number,
     longitude: number,
     name?: string,
-    address?: string
+    address?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     const formattedPhone = formatPhoneNumber(phoneNumber);
     return sendLocationMessage(
@@ -345,7 +368,8 @@ export class WhatsApp {
       latitude,
       longitude,
       name,
-      address
+      address,
+      bizOpaqueCallbackData
     );
   }
 
@@ -452,6 +476,30 @@ export class WhatsApp {
   ): void {
     const handler = new LocationHandler(action, options);
     this.dispatcher.registerHandler(handler);
+  }
+
+  /**
+   * Register a message-status handler.
+   *
+   * Status webhooks report what happened to a message you previously sent
+   * (`sent`, `delivered`, `read`, `failed`). The status's `messageId` (wamid)
+   * is the only link back to the original message.
+   *
+   * @param action - Callback invoked with a {@link StatusUpdate}
+   * @param options - Optionally filter by status, e.g. `{ status: 'failed' }`
+   *
+   * @example
+   * ```typescript
+   * client.onMessageStatus((status) => {
+   *   console.error(`Delivery failed for ${status.messageId}:`, status.error?.code);
+   * }, { status: 'failed' });
+   * ```
+   */
+  onMessageStatus(
+    action: StatusHandlerFunction,
+    options: StatusHandlerOptions = {}
+  ): void {
+    this.dispatcher.registerStatusHandler(action, options);
   }
 
   /**

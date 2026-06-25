@@ -4,6 +4,7 @@
 
 import type { AxiosResponse } from 'axios';
 import type { Update } from '../Update.js';
+import type { StatusUpdate } from '../StatusUpdate.js';
 
 /**
  * WhatsApp webhook value object received from WhatsApp servers
@@ -21,7 +22,79 @@ export interface WebhookValue {
     wa_id: string;
   }>;
   messages?: WhatsAppMessage[];
-  statuses?: any[];
+  statuses?: MessageStatus[];
+}
+
+/**
+ * Delivery status reported for a previously-sent message.
+ * @see https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages/status
+ */
+export type MessageStatusType = 'sent' | 'delivered' | 'read' | 'failed';
+
+/**
+ * Error detail attached to a 'failed' message status. Inspect `code` to decide
+ * whether a retry makes sense — not every failure is retryable.
+ */
+export interface MessageStatusError {
+  /** WhatsApp error code (e.g. 131049). The key signal for retry decisions. */
+  code: number;
+  /** Short, human-readable error title. */
+  title: string;
+  /** Longer error message (often identical to `title`). */
+  message?: string;
+  /** Additional, more specific detail. */
+  error_data?: {
+    details: string;
+  };
+  /** Link to the relevant error-code documentation. */
+  href?: string;
+}
+
+/**
+ * Conversation context attached to a message status (billing window, origin).
+ */
+export interface MessageStatusConversation {
+  id: string;
+  origin?: {
+    type: string;
+  };
+  expiration_timestamp?: string;
+}
+
+/**
+ * Pricing/billing context attached to a message status.
+ */
+export interface MessageStatusPricing {
+  billable?: boolean;
+  pricing_model?: string;
+  category?: string;
+}
+
+/**
+ * A single message-status entry delivered via the `statuses` webhook.
+ *
+ * `id` is the WhatsApp message id (wamid) returned when the message was sent —
+ * it is the only field that ties this status back to the original message.
+ */
+export interface MessageStatus {
+  /** WhatsApp message id (wamid) of the message this status refers to. */
+  id: string;
+  /** Current delivery status. */
+  status: MessageStatusType;
+  /** Unix timestamp in seconds, as a string, of when the status occurred. */
+  timestamp: string;
+  /** WhatsApp user id (phone number) the message was sent to. */
+  recipient_id: string;
+  conversation?: MessageStatusConversation;
+  pricing?: MessageStatusPricing;
+  /** Present when `status` is 'failed'. Describes why delivery failed. */
+  errors?: MessageStatusError[];
+  /**
+   * Arbitrary tracking string you supplied as `biz_opaque_callback_data` when
+   * sending — echoed back here so you can correlate the status to your own
+   * records without maintaining a separate lookup table.
+   */
+  biz_opaque_callback_data?: string;
 }
 
 /**
@@ -149,6 +222,31 @@ export type HandlerFunction = (
 export type FilterFunction = (text: string) => boolean;
 
 /**
+ * Message-status handler callback. Receives a {@link StatusUpdate} describing
+ * one delivery-status change for a previously-sent message.
+ */
+export type StatusHandlerFunction = (
+  status: StatusUpdate
+) => void | Promise<void>;
+
+/**
+ * Options for registering a message-status handler.
+ */
+export interface StatusHandlerOptions {
+  /**
+   * Only invoke the handler for these status value(s). Omit to receive every
+   * status. e.g. `{ status: 'failed' }` to react only to delivery failures.
+   */
+  status?: MessageStatusType | MessageStatusType[];
+  /**
+   * Skip this handler if more than this many minutes have elapsed since the
+   * status webhook's `timestamp` (WEBHOOK_TRIGGER_TIMESTAMP). Useful for
+   * dropping stale receipts delivered long after the event. Omit to always run.
+   */
+  ignoreAfterMinutes?: number;
+}
+
+/**
  * Handler options
  */
 export interface HandlerOptions {
@@ -156,6 +254,13 @@ export interface HandlerOptions {
   filter?: FilterFunction;
   context?: boolean;
   persistent?: boolean;
+  /**
+   * Skip this handler if more than this many minutes have elapsed since the
+   * webhook's `timestamp` (WEBHOOK_TRIGGER_TIMESTAMP). Useful for dropping
+   * stale messages replayed or delivered long after they were sent. Omit to
+   * always run regardless of age.
+   */
+  ignoreAfterMinutes?: number;
 }
 
 /**
@@ -209,6 +314,12 @@ export interface SendMessageOptions {
   footer?: string;
   webPagePreview?: boolean;
   tagMessage?: boolean;
+  /**
+   * Arbitrary tracking string (max ~512 chars) echoed back on the message's
+   * status webhook as `biz_opaque_callback_data`. Use it to correlate delivery
+   * statuses to your own records without a wamid lookup table.
+   */
+  bizOpaqueCallbackData?: string;
 }
 
 /**
@@ -220,6 +331,12 @@ export interface SendMediaOptions {
   msgId?: string;
   tagMessage?: boolean;
   mediaType?: 'image' | 'video' | 'audio' | 'document' | 'sticker';
+  /**
+   * Arbitrary tracking string (max ~512 chars) echoed back on the message's
+   * status webhook as `biz_opaque_callback_data`. Use it to correlate delivery
+   * statuses to your own records without a wamid lookup table.
+   */
+  bizOpaqueCallbackData?: string;
 }
 
 /**
@@ -356,6 +473,7 @@ export interface UpdateHandler {
   persistent: boolean;
   list?: boolean;
   button?: boolean;
+  ignoreAfterMinutes?: number;
 
   extractData(message: WhatsAppMessage): UpdateData;
   filterCheck(text: string): boolean;
@@ -396,7 +514,8 @@ export interface WhatsAppClient {
     phoneNumber: string,
     templateName: string,
     components?: TemplateComponent[],
-    languageCode?: string
+    languageCode?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse>;
 
   sendMediaMessage(
@@ -408,33 +527,42 @@ export interface WhatsAppClient {
   sendButtonCarousel(
     phoneNumber: string,
     text: string,
-    cards: CarouselCard<QuickReplyAction>[]
+    cards: CarouselCard<QuickReplyAction>[],
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse>;
 
   sendUrlCarousel(
     phoneNumber: string,
     text: string,
-    cards: CarouselCard<CtaUrlAction>[]
+    cards: CarouselCard<CtaUrlAction>[],
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse>;
 
   sendImage(
     phoneNumber: string,
     imagePath: string,
-    caption?: string
+    caption?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse>;
 
   sendVideo(
     phoneNumber: string,
     videoPath: string,
-    caption?: string
+    caption?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse>;
 
-  sendAudio(phoneNumber: string, audioPath: string): Promise<AxiosResponse>;
+  sendAudio(
+    phoneNumber: string,
+    audioPath: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse>;
 
   sendDocument(
     phoneNumber: string,
     documentPath: string,
-    caption?: string
+    caption?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse>;
 
   sendLocation(
@@ -442,7 +570,8 @@ export interface WhatsAppClient {
     latitude: number,
     longitude: number,
     name?: string,
-    address?: string
+    address?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse>;
 
   // Media utility methods
@@ -473,6 +602,10 @@ export interface WhatsAppClient {
   onDocumentMessage(action: HandlerFunction, options?: HandlerOptions): void;
   onStickerMessage(action: HandlerFunction, options?: HandlerOptions): void;
   onLocationMessage(action: HandlerFunction, options?: HandlerOptions): void;
+  onMessageStatus(
+    action: StatusHandlerFunction,
+    options?: StatusHandlerOptions
+  ): void;
 
   // Conversation flow methods
   setNextStep(

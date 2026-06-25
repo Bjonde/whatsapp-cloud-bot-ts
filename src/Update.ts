@@ -82,9 +82,15 @@ export class Update {
    */
   async replyWithButtonCarousel(
     text: string,
-    cards: CarouselCard<QuickReplyAction>[]
+    cards: CarouselCard<QuickReplyAction>[],
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
-    return await this.bot.sendButtonCarousel(this.userPhoneNumber, text, cards);
+    return await this.bot.sendButtonCarousel(
+      this.userPhoneNumber,
+      text,
+      cards,
+      bizOpaqueCallbackData
+    );
   }
 
   /**
@@ -92,9 +98,15 @@ export class Update {
    */
   async replyWithUrlCarousel(
     text: string,
-    cards: CarouselCard<CtaUrlAction>[]
+    cards: CarouselCard<CtaUrlAction>[],
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
-    return await this.bot.sendUrlCarousel(this.userPhoneNumber, text, cards);
+    return await this.bot.sendUrlCarousel(
+      this.userPhoneNumber,
+      text,
+      cards,
+      bizOpaqueCallbackData
+    );
   }
 
   /**
@@ -103,13 +115,15 @@ export class Update {
   async replyTemplate(
     templateName: string,
     components?: any[],
-    languageCode?: string
+    languageCode?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     return await this.bot.sendTemplateMessage(
       this.userPhoneNumber,
       templateName,
       components,
-      languageCode
+      languageCode,
+      bizOpaqueCallbackData
     );
   }
 
@@ -118,9 +132,15 @@ export class Update {
    */
   async replyImage(
     imagePath: string,
-    caption?: string
+    caption?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
-    return await this.bot.sendImage(this.userPhoneNumber, imagePath, caption);
+    return await this.bot.sendImage(
+      this.userPhoneNumber,
+      imagePath,
+      caption,
+      bizOpaqueCallbackData
+    );
   }
 
   /**
@@ -128,16 +148,29 @@ export class Update {
    */
   async replyVideo(
     videoPath: string,
-    caption?: string
+    caption?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
-    return await this.bot.sendVideo(this.userPhoneNumber, videoPath, caption);
+    return await this.bot.sendVideo(
+      this.userPhoneNumber,
+      videoPath,
+      caption,
+      bizOpaqueCallbackData
+    );
   }
 
   /**
    * Reply with audio message
    */
-  async replyAudio(audioPath: string): Promise<AxiosResponse> {
-    return await this.bot.sendAudio(this.userPhoneNumber, audioPath);
+  async replyAudio(
+    audioPath: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
+    return await this.bot.sendAudio(
+      this.userPhoneNumber,
+      audioPath,
+      bizOpaqueCallbackData
+    );
   }
 
   /**
@@ -145,12 +178,14 @@ export class Update {
    */
   async replyDocument(
     documentPath: string,
-    caption?: string
+    caption?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     return await this.bot.sendDocument(
       this.userPhoneNumber,
       documentPath,
-      caption
+      caption,
+      bizOpaqueCallbackData
     );
   }
 
@@ -161,23 +196,29 @@ export class Update {
     latitude: number,
     longitude: number,
     name?: string,
-    address?: string
+    address?: string,
+    bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
     return await this.bot.sendLocation(
       this.userPhoneNumber,
       latitude,
       longitude,
       name,
-      address
+      address,
+      bizOpaqueCallbackData
     );
   }
 
   /**
    * Reply with sticker message
    */
-  async replySticker(stickerPath: string): Promise<AxiosResponse> {
+  async replySticker(
+    stickerPath: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
     return await this.bot.sendMediaMessage(this.userPhoneNumber, stickerPath, {
       mediaType: 'sticker',
+      bizOpaqueCallbackData,
     });
   }
 }
