@@ -14,7 +14,6 @@ import type {
 } from './types/index.js';
 import { Update } from './Update.js';
 import { StatusUpdate } from './StatusUpdate.js';
-import { UserContext } from './UserContext.js';
 import type { UpdateHandler } from './Handlers.js';
 import { MessageHandler } from './Handlers.js';
 import { isOlderThanMinutes } from './utils/helpers.js';
@@ -218,13 +217,10 @@ export class Dispatcher {
     update.messageText = extractedData.messageText;
     Object.assign(update, extractedData);
 
-    // Run handler with or without context
-    if (handler.context) {
-      const context = new UserContext(update.userPhoneNumber);
-      await handler.run(update, context);
-    } else {
-      await handler.run(update);
-    }
+    // The in-memory user context has been removed; the deprecated `context`
+    // parameter is no longer injected (handlers receive `undefined`). Manage
+    // conversation state in your own store keyed by update.userPhoneNumber.
+    await handler.run(update);
 
     return true;
   }
