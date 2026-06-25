@@ -3,36 +3,28 @@
  */
 
 /**
- * Check if nested keys exist in an object
- * @param element - The object to check
- * @param keys - Nested keys to check for existence
- * @returns true if all keys exist, false otherwise
+ * Determine whether a webhook event is older than a given age.
  *
- * @example
- * const data = { spam: { egg: { bacon: "Well.." } } };
- * keysExist(data, "spam"); // true
- * keysExist(data, "spam", "egg"); // true
- * keysExist(data, "spam", "egg", "bacon"); // true
- * keysExist(data, "spam", "bacon"); // false
+ * Webhook `messages[].timestamp` and `statuses[].timestamp` are Unix timestamps
+ * in **seconds**, expressed as strings (the WEBHOOK_TRIGGER_TIMESTAMP). This
+ * compares that moment against now.
+ *
+ * @param timestampSeconds - Unix timestamp in seconds (string or number)
+ * @param minutes - Maximum allowed age, in minutes
+ * @returns true if the event is older than `minutes`. Returns false when the
+ *          timestamp is missing or unparseable, so events are never dropped on
+ *          a bad/absent timestamp.
  */
-export function keysExist(element: any, ...keys: (string | number)[]): boolean {
-  if (typeof element !== 'object' || element === null) {
+export function isOlderThanMinutes(
+  timestampSeconds: string | number | undefined,
+  minutes: number
+): boolean {
+  const ts = Number(timestampSeconds);
+  if (!Number.isFinite(ts) || ts <= 0) {
     return false;
   }
-
-  if (keys.length === 0) {
-    throw new Error('keysExist() expects at least one key argument');
-  }
-
-  let current = element;
-  for (const key of keys) {
-    if (typeof current !== 'object' || current === null || !(key in current)) {
-      return false;
-    }
-    current = current[key];
-  }
-
-  return true;
+  const ageMs = Date.now() - ts * 1000;
+  return ageMs > minutes * 60 * 1000;
 }
 
 /**

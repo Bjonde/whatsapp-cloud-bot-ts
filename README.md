@@ -377,6 +377,59 @@ client.onLocationMessage(async (update, context) => {
 });
 ```
 
+#### Message Status Handler
+
+WhatsApp sends `statuses` webhooks reporting what happened to messages **you sent** (`sent`, `delivered`, `read`, `failed`). Register a handler with `onMessageStatus`. The status's `messageId` (wamid) is the only field linking it back to the original message.
+
+```typescript
+// React to every status change
+client.onMessageStatus((status) => {
+  console.log(`${status.messageId} → ${status.status}`);
+});
+
+// Or only to failures
+client.onMessageStatus((status) => {
+  console.error(
+    `Delivery to ${status.recipientId} failed:`,
+    status.error?.code,
+    status.error?.title
+  );
+  // status.callbackData holds your biz_opaque_callback_data, if you set one
+}, { status: 'failed' });
+```
+
+A `StatusUpdate` exposes `messageId`, `status`, `recipientId`, `timestamp` (a `Date`), `errors`/`error`, `conversation`, `pricing`, `callbackData`, and the booleans `isSent` / `isDelivered` / `isRead` / `isFailed`.
+
+> **Correlating a status to your message:** the library is stateless — it does not retain sent-message ids. To act on a status (especially `failed`), record the wamid returned in the send response (`response.data.messages[0].id`) against your own domain data, or tag outgoing messages with `biz_opaque_callback_data` so it is echoed back on the status. See _Best Practices_ for handling failures.
+
+**Tagging messages for correlation (`bizOpaqueCallbackData`).** Every send method accepts an optional tracking string that WhatsApp echoes back on the status webhook as `status.callbackData`. Stamp your own record id onto the message and you can route the status without a wamid lookup table:
+
+```typescript
+// On send — pass your own id (options object on sendMessage/sendMediaMessage,
+// last positional arg on the others)
+await client.sendMessage(user, 'Your order shipped!', {
+  bizOpaqueCallbackData: 'order_12345',
+});
+await client.sendTemplateMessage(user, 'shipping', [], 'en_US', 'order_12345');
+
+// On status — it comes straight back
+client.onMessageStatus((status) => {
+  if (status.isFailed) {
+    markOrderNotificationFailed(status.callbackData); // "order_12345"
+  }
+}, { status: 'failed' });
+```
+
+**Ignoring stale events.** Every handler (message *and* status) accepts `ignoreAfterMinutes` — if more than that many minutes have elapsed since the webhook's `timestamp` (WEBHOOK_TRIGGER_TIMESTAMP), the handler is skipped. Useful for dropping events replayed or delivered long after the fact:
+
+```typescript
+// Ignore messages older than 5 minutes (e.g. webhook retries / backlog)
+client.onMessage(handler, { ignoreAfterMinutes: 5 });
+
+// Only act on fresh failures
+client.onMessageStatus(handler, { status: 'failed', ignoreAfterMinutes: 10 });
+```
+
 ### Conversation Flow Management
 
 #### Using Context
