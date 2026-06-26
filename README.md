@@ -596,9 +596,9 @@ interface Update {
 }
 ```
 
-### UserContext Object (deprecated)
+### UserContext (removed)
 
-> **Deprecated and no longer injected.** The built-in in-memory context store has been removed. The `context` second parameter of handlers is always `undefined`; the `UserContext` class remains exported only so existing imports keep compiling, but it no longer persists anything. Track conversation state in your own store keyed by `update.userPhoneNumber` (see _Tracking conversation state_ above).
+> **Removed.** The in-memory `UserContext` class and the `clearAllContexts` / `getAllContextUsers` helpers no longer exist. The `context` second parameter of handlers is always `undefined`. Only the `UserContext` **type** is still exported, so the deprecated `context?: UserContext` parameter keeps compiling. Track conversation state in your own store keyed by `update.userPhoneNumber` (see _Tracking conversation state_ above).
 
 ## TypeScript Usage
 
@@ -608,19 +608,15 @@ The library is written in TypeScript and provides full type definitions:
 import {
   WhatsApp,
   Update,
-  UserContext,
   InlineKeyboard,
   HandlerFunction,
 } from 'whatsapp-cloud-bot';
 
-// Type-safe handler
-const myHandler: HandlerFunction = async (
-  update: Update,
-  context?: UserContext
-) => {
+// Type-safe handler (the second `context` arg is deprecated and always undefined)
+const myHandler: HandlerFunction = async (update: Update) => {
   // Full autocomplete and type checking
   const text: string | undefined = update.messageText;
-  await update.replyMessage('Hello!');
+  await update.replyWithText('Hello!');
 };
 
 client.onMessage(myHandler);

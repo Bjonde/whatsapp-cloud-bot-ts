@@ -14,7 +14,7 @@ import type {
   MessageType,
 } from './types/index.js';
 import type { Update } from './Update.js';
-import type { UserContext } from './UserContext.js';
+import type { UserContext } from './types/index.js';
 
 /**
  * Base Update Handler Class

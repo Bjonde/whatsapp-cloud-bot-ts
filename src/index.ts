@@ -12,12 +12,10 @@ export type { WhatsAppConfig } from './WhatsApp.js';
 // Core Classes
 export { Update } from './Update.js';
 export { StatusUpdate } from './StatusUpdate.js';
-export {
-  UserContext,
-  clearAllContexts,
-  getAllContextUsers,
-} from './UserContext.js';
 export { Dispatcher } from './Dispatcher.js';
+// NOTE: the in-memory UserContext implementation has been removed. The
+// `UserContext` *type* is still exported (via the types barrel below) so the
+// deprecated handler `context?: UserContext` parameter keeps compiling.
 
 // Handlers
 export {
