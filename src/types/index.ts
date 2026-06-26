@@ -131,6 +131,30 @@ export type MessageType =
   | 'unsupported';
 
 /**
+ * Sub-types of an interactive reply message (`message.interactive.type`):
+ * - `button_reply` — a reply (quick-reply) button was tapped
+ * - `list_reply` — a list option was chosen
+ * - `nfm_reply` — a Flow was completed/submitted
+ */
+export type InteractiveReplyType = 'button_reply' | 'list_reply' | 'nfm_reply';
+
+/**
+ * Parsed Flow completion reply (`interactive.nfm_reply`).
+ */
+export interface FlowReplyData {
+  /** Always `'flow'`. */
+  name: string;
+  /** Always `'Sent'`. */
+  body: string;
+  /** Raw `response_json` string returned by the Flow. */
+  responseJson: string;
+  /** Parsed `response_json` object. */
+  data: Record<string, unknown>;
+  /** `flow_token` from the parsed response, if present. */
+  flowToken?: string;
+}
+
+/**
  * Base WhatsApp message structure
  */
 export interface WhatsAppMessage {
@@ -146,7 +170,7 @@ export interface WhatsAppMessage {
     text: string;
   };
   interactive?: {
-    type: 'button_reply' | 'list_reply';
+    type: InteractiveReplyType;
     button_reply?: {
       id: string;
       title: string;
@@ -155,6 +179,15 @@ export interface WhatsAppMessage {
       id: string;
       title: string;
       description?: string;
+    };
+    /** Present when a user completes/submits a Flow (type `nfm_reply`). */
+    nfm_reply?: {
+      /** Always `'flow'`. */
+      name: string;
+      /** Always `'Sent'`. */
+      body: string;
+      /** Flow-specific data as a JSON string (the flow's Complete payload). */
+      response_json: string;
     };
   };
   image?: MediaObject;
@@ -203,6 +236,7 @@ export interface UpdateData {
     id: string;
     title: string;
   };
+  flowReply?: FlowReplyData;
   mediaMimeType?: string;
   mediaFileId?: string;
   mediaHash?: string;
@@ -567,6 +601,12 @@ export interface UpdateHandler {
   list?: boolean;
   button?: boolean;
   ignoreAfterMinutes?: number;
+  /**
+   * For `interactive` handlers, the reply sub-types this handler accepts. The
+   * dispatcher only runs the handler when `message.interactive.type` is one of
+   * these. Undefined means "no sub-type restriction".
+   */
+  interactiveTypes?: InteractiveReplyType[];
 
   extractData(message: WhatsAppMessage): UpdateData;
   filterCheck(text: string): boolean;
@@ -716,12 +756,17 @@ export interface WhatsAppClient {
   ): Promise<AxiosResponse>;
 
   // Handler registration methods
+  onTextMessage(action: HandlerFunction, options?: HandlerOptions): void;
+  /** @deprecated Use onTextMessage. */
   onMessage(action: HandlerFunction, options?: HandlerOptions): void;
   onButtonMessage(action: HandlerFunction, options?: HandlerOptions): void;
   onInteractiveMessage(
     action: HandlerFunction,
     options?: InteractiveHandlerOptions
   ): void;
+  onButtonReply(action: HandlerFunction, options?: HandlerOptions): void;
+  onListReply(action: HandlerFunction, options?: HandlerOptions): void;
+  onFlowReply(action: HandlerFunction, options?: HandlerOptions): void;
   onImageMessage(action: HandlerFunction, options?: HandlerOptions): void;
   onAudioMessage(action: HandlerFunction, options?: HandlerOptions): void;
   onVideoMessage(action: HandlerFunction, options?: HandlerOptions): void;

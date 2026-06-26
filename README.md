@@ -328,12 +328,14 @@ await client.sendTemplateMessage(
 
 ### Handling Incoming Messages
 
-#### Basic Message Handler
+> **Handler naming:** `onTextMessage` is the preferred name for plain-text handlers (`onMessage` still works but is **deprecated**). For interactive replies, prefer the sub-type-specific `onButtonReply` / `onListReply` / `onFlowReply` over the combined `onInteractiveMessage`.
+
+#### Basic Text Handler
 
 ```typescript
-client.onMessage(async (update, context) => {
+client.onTextMessage(async (update) => {
   console.log(`Received: ${update.messageText}`);
-  await update.replyMessage('Got your message!');
+  await update.replyWithText('Got your message!');
 });
 ```
 
@@ -362,15 +364,41 @@ client.onMessage(
 );
 ```
 
-#### Interactive Message Handler
+#### Interactive Reply Handlers
 
 ```typescript
+// Button replies only
+client.onButtonReply(async (update) => {
+  console.log('Button id:', update.buttonReply?.id);
+});
+
+// List replies only
+client.onListReply(async (update) => {
+  console.log('List id:', update.listReply?.id);
+});
+
+// Or handle both at once (combined)
 client.onInteractiveMessage(async (update, context) => {
   if (update.messageText === 'option_1') {
-    await update.replyMessage('You selected Option 1');
+    await update.replyWithText('You selected Option 1');
   }
 });
 ```
+
+#### Flow Reply Handler
+
+When a user completes a [Flow](#flow-messages), WhatsApp sends an interactive `nfm_reply`. Register an `onFlowReply` handler — the parsed Flow response is on `update.flowReply`:
+
+```typescript
+client.onFlowReply(async (update) => {
+  const reply = update.flowReply!;
+  console.log('Flow token:', reply.flowToken);  // your correlation token
+  console.log('Response data:', reply.data);     // parsed response_json
+  // reply.responseJson holds the raw string
+});
+```
+
+> A ready-made two-step auth Flow (email → OTP, with a "register → not available → back" branch) is included at [`examples/auth_flow.json`](examples/auth_flow.json). The `EMAIL` screen submits `{ email }` to your endpoint; the `OTP` screen quotes the email via `${data.email}` and submits `{ email, otp }`. Pair it with the [Flow endpoint helpers](#implementing-a-flow-endpoint).
 
 #### Media Handlers
 

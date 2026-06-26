@@ -14,6 +14,7 @@ import type {
   QuickReplyAction,
   CtaUrlAction,
   FlowParameters,
+  FlowReplyData,
 } from './types/index.js';
 import type { InlineButton, ListItem, ListSection } from './Markup.js';
 import type { InteractiveSendOptions } from './Message.js';
@@ -42,6 +43,8 @@ export class Update {
   public messageId: string;
   public messageText?: string;
   public interactiveText?: any;
+  /** Parsed Flow completion reply, set on `nfm_reply` interactive messages. */
+  public flowReply?: FlowReplyData;
   public mediaUrl?: string;
   public mediaMimeType?: string;
   public mediaFileId?: string;

@@ -1,0 +1,173 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "EMAIL": [
+      "OTP",
+      "NOT_AVAILABLE"
+    ],
+    "OTP": [
+      "SUCCESS",
+      "NOT_AVAILABLE"
+    ],
+    "NOT_AVAILABLE": [],
+    "SUCCESS": []
+  },
+  "screens": [
+    {
+      "id": "EMAIL",
+      "title": "Sign in",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Sign in"
+          },
+          {
+            "type": "TextBody",
+            "text": "Enter your email and we'll send an OTP to verify it."
+          },
+          {
+            "type": "Form",
+            "name": "email_form",
+            "children": [
+              {
+                "type": "TextInput",
+                "name": "email",
+                "label": "Email",
+                "input-type": "email",
+                "required": true,
+                "helper-text": "We'll send your OTP here."
+              },
+              {
+                "type": "EmbeddedLink",
+                "text": "New here? Register",
+                "on-click-action": {
+                  "name": "navigate",
+                  "next": {
+                    "type": "screen",
+                    "name": "NOT_AVAILABLE"
+                  },
+                  "payload": {}
+                }
+              },
+              {
+                "type": "Footer",
+                "label": "Send code",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "email": "${form.email}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "OTP",
+      "title": "Enter code",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Enter your code"
+          },
+          {
+            "type": "TextBody",
+            "text": "We sent an OTP to ${screen.EMAIL.form.email}. Enter it below to continue."
+          },
+          {
+            "type": "Form",
+            "name": "otp_form",
+            "children": [
+              {
+                "type": "TextInput",
+                "name": "otp",
+                "label": "OTP",
+                "input-type": "passcode",
+                "required": true,
+                "helper-text": "Check your inbox for the code."
+              },
+              {
+                "type": "EmbeddedLink",
+                "text": "New here? Register",
+                "on-click-action": {
+                  "name": "navigate",
+                  "next": {
+                    "type": "screen",
+                    "name": "NOT_AVAILABLE"
+                  },
+                  "payload": {}
+                }
+              },
+              {
+                "type": "Footer",
+                "label": "Verify",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "email": "${screen.EMAIL.form.email}",
+                    "otp": "${form.otp}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NOT_AVAILABLE",
+      "title": "Coming soon",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Feature not available"
+          },
+          {
+            "type": "TextBody",
+            "text": "Registration isn't available yet. Please check back soon. Use the back button above to return to where you left off."
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "Verified",
+      "terminal": true,
+      "success": true,
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "You're verified"
+          },
+          {
+            "type": "TextBody",
+            "text": "Your email has been verified successfully."
+          },
+          {
+            "type": "Footer",
+            "label": "Done",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

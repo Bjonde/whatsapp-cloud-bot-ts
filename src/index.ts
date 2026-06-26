@@ -20,9 +20,13 @@ export { Dispatcher } from './Dispatcher.js';
 // Handlers
 export {
   UpdateHandler,
+  TextHandler,
   MessageHandler,
   ButtonHandler,
   InteractiveQueryHandler,
+  ButtonReplyHandler,
+  ListReplyHandler,
+  FlowReplyHandler,
   ImageHandler,
   AudioHandler,
   VideoHandler,

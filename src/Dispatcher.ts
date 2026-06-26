@@ -15,7 +15,7 @@ import type {
 import { Update } from './Update.js';
 import { StatusUpdate } from './StatusUpdate.js';
 import type { UpdateHandler } from './Handlers.js';
-import { MessageHandler } from './Handlers.js';
+import { TextHandler } from './Handlers.js';
 import { isOlderThanMinutes } from './utils/helpers.js';
 
 /**
@@ -197,6 +197,17 @@ export class Dispatcher {
       return false;
     }
 
+    // For interactive handlers, gate on the reply sub-type (button_reply /
+    // list_reply / nfm_reply) so button/list/flow handlers don't cross-fire.
+    if (
+      message.type === 'interactive' &&
+      handler.interactiveTypes &&
+      (!message.interactive ||
+        !handler.interactiveTypes.includes(message.interactive.type))
+    ) {
+      return false;
+    }
+
     // Skip stale messages if the handler opted into an age limit
     if (
       handler.ignoreAfterMinutes !== undefined &&
@@ -304,7 +315,7 @@ export class Dispatcher {
           ? new RegExp(fallbackRegex)
           : fallbackRegex;
 
-      config.fallbackHandler = new MessageHandler(fallbackFunction as any, {
+      config.fallbackHandler = new TextHandler(fallbackFunction as any, {
         regex,
       });
     }

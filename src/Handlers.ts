@@ -11,6 +11,7 @@ import type {
   FilterFunction,
   HandlerOptions,
   InteractiveHandlerOptions,
+  InteractiveReplyType,
   MessageType,
 } from './types/index.js';
 import type { Update } from './Update.js';
@@ -27,6 +28,8 @@ export abstract class UpdateHandler {
   public context: boolean;
   public persistent: boolean;
   public ignoreAfterMinutes?: number;
+  /** For interactive handlers: which reply sub-types this handler accepts. */
+  public interactiveTypes?: InteractiveReplyType[];
 
   constructor(
     name: MessageType,
@@ -83,10 +86,10 @@ export abstract class UpdateHandler {
 }
 
 /**
- * Message Handler
- * Handles text messages
+ * Text Handler
+ * Handles plain text messages.
  */
-export class MessageHandler extends UpdateHandler {
+export class TextHandler extends UpdateHandler {
   constructor(action: HandlerFunction, options: HandlerOptions = {}) {
     super('text', action, options);
   }
@@ -97,6 +100,11 @@ export class MessageHandler extends UpdateHandler {
     };
   }
 }
+
+/**
+ * @deprecated Use {@link TextHandler}.
+ */
+export class MessageHandler extends TextHandler {}
 
 /**
  * Button Handler
@@ -130,8 +138,39 @@ export class ButtonHandler extends UpdateHandler {
 
 
 /**
+ * Parse a Flow completion reply (`interactive.nfm_reply`) into UpdateData.
+ */
+function extractFlowReply(message: WhatsAppMessage): UpdateData {
+  const data: UpdateData = { messageText: '' };
+  const nfm = message.interactive?.nfm_reply;
+  if (!nfm) {
+    return data;
+  }
+
+  let parsed: Record<string, unknown> = {};
+  try {
+    parsed = JSON.parse(nfm.response_json);
+  } catch {
+    // Leave parsed empty if the response isn't valid JSON.
+  }
+
+  data.messageText = nfm.body || '';
+  data.flowReply = {
+    name: nfm.name,
+    body: nfm.body,
+    responseJson: nfm.response_json,
+    data: parsed,
+    flowToken:
+      typeof parsed.flow_token === 'string' ? parsed.flow_token : undefined,
+  };
+  return data;
+}
+
+/**
  * Interactive Query Handler
- * Handles button and list replies
+ * Handles button **and** list replies. Prefer the dedicated
+ * {@link ButtonReplyHandler} / {@link ListReplyHandler} / {@link FlowReplyHandler}
+ * when you only care about one reply sub-type.
  */
 export class InteractiveQueryHandler extends UpdateHandler {
   public handleButton: boolean;
@@ -144,6 +183,10 @@ export class InteractiveQueryHandler extends UpdateHandler {
     super('interactive', action, options);
     this.handleButton = options.handleButton !== false;
     this.handleList = options.handleList !== false;
+    this.interactiveTypes = [
+      ...(this.handleButton ? (['button_reply'] as const) : []),
+      ...(this.handleList ? (['list_reply'] as const) : []),
+    ];
   }
 
   extractData(message: WhatsAppMessage): UpdateData {
@@ -172,6 +215,64 @@ export class InteractiveQueryHandler extends UpdateHandler {
     }
 
     return data;
+  }
+}
+
+/**
+ * Button Reply Handler — handles only interactive **button** replies
+ * (`interactive.type === 'button_reply'`).
+ */
+export class ButtonReplyHandler extends UpdateHandler {
+  constructor(action: HandlerFunction, options: HandlerOptions = {}) {
+    super('interactive', action, options);
+    this.interactiveTypes = ['button_reply'];
+  }
+
+  extractData(message: WhatsAppMessage): UpdateData {
+    const data: UpdateData = { messageText: '' };
+    const reply = message.interactive?.button_reply;
+    if (reply) {
+      data.messageText = reply.id;
+      data.buttonReply = reply;
+    }
+    return data;
+  }
+}
+
+/**
+ * List Reply Handler — handles only interactive **list** replies
+ * (`interactive.type === 'list_reply'`).
+ */
+export class ListReplyHandler extends UpdateHandler {
+  constructor(action: HandlerFunction, options: HandlerOptions = {}) {
+    super('interactive', action, options);
+    this.interactiveTypes = ['list_reply'];
+  }
+
+  extractData(message: WhatsAppMessage): UpdateData {
+    const data: UpdateData = { messageText: '' };
+    const reply = message.interactive?.list_reply;
+    if (reply) {
+      data.messageText = reply.id;
+      data.listReply = reply;
+    }
+    return data;
+  }
+}
+
+/**
+ * Flow Reply Handler — handles Flow completion replies
+ * (`interactive.type === 'nfm_reply'`). The parsed Flow response is available
+ * on `update.flowReply`.
+ */
+export class FlowReplyHandler extends UpdateHandler {
+  constructor(action: HandlerFunction, options: HandlerOptions = {}) {
+    super('interactive', action, options);
+    this.interactiveTypes = ['nfm_reply'];
+  }
+
+  extractData(message: WhatsAppMessage): UpdateData {
+    return extractFlowReply(message);
   }
 }
 

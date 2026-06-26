@@ -26,9 +26,12 @@ import type { InlineButton, ListItem, ListSection } from './Markup.js';
 import type { InteractiveSendOptions } from './Message.js';
 import type { UpdateHandler } from './Handlers.js';
 import {
-  MessageHandler,
+  TextHandler,
   ButtonHandler,
   InteractiveQueryHandler,
+  ButtonReplyHandler,
+  ListReplyHandler,
+  FlowReplyHandler,
   ImageHandler,
   AudioHandler,
   VideoHandler,
@@ -489,15 +492,22 @@ export class WhatsApp {
   }
 
   /**
-   * Register text message handler
+   * Register a plain text message handler.
    */
-  onMessage(action: HandlerFunction, options: HandlerOptions = {}): void {
-    const handler = new MessageHandler(action, options);
+  onTextMessage(action: HandlerFunction, options: HandlerOptions = {}): void {
+    const handler = new TextHandler(action, options);
     this.dispatcher.registerHandler(handler);
   }
 
   /**
-   * Register button message handler
+   * @deprecated Use {@link onTextMessage}.
+   */
+  onMessage(action: HandlerFunction, options: HandlerOptions = {}): void {
+    this.onTextMessage(action, options);
+  }
+
+  /**
+   * Register button message handler (template/CTA `button` messages).
    */
   onButtonMessage(action: HandlerFunction, options: HandlerOptions = {}): void {
     const handler = new ButtonHandler(action, options);
@@ -505,13 +515,40 @@ export class WhatsApp {
   }
 
   /**
-   * Register interactive message handler (buttons and lists)
+   * Register interactive message handler (handles **both** button and list
+   * replies). Prefer {@link onButtonReply} / {@link onListReply} when you only
+   * care about one reply type.
    */
   onInteractiveMessage(
     action: HandlerFunction,
     options: InteractiveHandlerOptions = {}
   ): void {
     const handler = new InteractiveQueryHandler(action, options);
+    this.dispatcher.registerHandler(handler);
+  }
+
+  /**
+   * Register a handler for interactive **button** replies only.
+   */
+  onButtonReply(action: HandlerFunction, options: HandlerOptions = {}): void {
+    const handler = new ButtonReplyHandler(action, options);
+    this.dispatcher.registerHandler(handler);
+  }
+
+  /**
+   * Register a handler for interactive **list** replies only.
+   */
+  onListReply(action: HandlerFunction, options: HandlerOptions = {}): void {
+    const handler = new ListReplyHandler(action, options);
+    this.dispatcher.registerHandler(handler);
+  }
+
+  /**
+   * Register a handler for **Flow** completion replies (`nfm_reply`). The parsed
+   * Flow response is available on `update.flowReply`.
+   */
+  onFlowReply(action: HandlerFunction, options: HandlerOptions = {}): void {
+    const handler = new FlowReplyHandler(action, options);
     this.dispatcher.registerHandler(handler);
   }
 
