@@ -45,7 +45,30 @@ export {
   ListSection,
   InlineList,
   InlineLocationRequest,
+  InlineFlow,
+  buildFlowAction,
 } from './Markup.js';
+
+// Standalone message senders (low-level; take url + token)
+export {
+  sendButtonMessage,
+  sendListMessage,
+  sendFlowMessage,
+} from './Message.js';
+export type { InteractiveSendOptions } from './Message.js';
+
+// Flow endpoint helpers (decrypt/encrypt/signature)
+export {
+  decryptFlowRequest,
+  encryptFlowResponse,
+  isFlowSignatureValid,
+  FlowEndpointException,
+} from './flows.js';
+export type {
+  EncryptedFlowRequest,
+  FlowDataExchangeBody,
+  DecryptedFlowRequest,
+} from './flows.js';
 
 // Types
 export * from './types/index.js';

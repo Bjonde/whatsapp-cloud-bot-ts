@@ -152,7 +152,10 @@ export async function sendTextMessage(
 }
 
 /**
- * Send interactive message (with buttons or lists)
+ * Send interactive message (with buttons, lists, carousel, or Flow). Use the convenience wrappers
+ * {@link sendButtonMessage}, {@link sendListMessage}, {@link sendFlowMessage},
+ * {@link sendCarouselUrlMessage}, or {@link sendCarouselButtonMessage} instead
+ * of calling this directly.
  */
 export async function sendInteractiveMessage(
   url: string,

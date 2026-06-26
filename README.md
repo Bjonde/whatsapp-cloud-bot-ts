@@ -249,6 +249,44 @@ client.onMessage(async (update) => {
 });
 ```
 
+#### Flow Messages
+
+Send an interactive [WhatsApp Flow](https://developers.facebook.com/documentation/business-messaging/whatsapp/flows). Provide **either** `flow_id` **or** `flow_name` (mutually exclusive) plus a `flow_cta`; the library fills in the documented defaults (`flow_message_version: '3'`, `mode: 'published'`, `flow_token: 'unused'`, `flow_action: 'navigate'`) and serializes `flow_action_payload.data` to the JSON string the API expects.
+
+```typescript
+// Navigate to a specific screen with prefilled data
+await client.sendFlowMessage('1234567890', 'Complete your signup', {
+  flow_id: '1234567890',
+  flow_cta: 'Sign up',
+  flow_token: 'order_42',                 // your correlation id (default 'unused')
+  flow_action: 'navigate',                // default
+  flow_action_payload: {
+    screen: 'WELCOME',                    // default FIRST_ENTRY_SCREEN
+    data: { plan: 'pro' },                // serialized to a JSON string for you
+  },
+});
+
+// data_exchange — first screen resolved by your endpoint (payload omitted)
+await client.sendFlowMessage('1234567890', 'Book an appointment', {
+  flow_name: 'booking',
+  flow_cta: 'Book now',
+  flow_action: 'data_exchange',
+});
+
+// Reply from a handler
+client.onMessage((update) =>
+  update.replyWithFlow('Tap to start', { flow_id: '123', flow_cta: 'Start' })
+);
+```
+
+Building Flow markup directly (e.g. to pass via `sendMessage`) is also supported with `new InlineFlow({...})`.
+
+#### Dedicated interactive senders
+
+Besides `sendMessage({ replyMarkup })`, there are explicit senders: `sendTextMessage` (text only), `sendButtonMessage`, `sendListMessage`, and `sendFlowMessage` — each with `Update` equivalents `replyWithText`, `replyWithButton`, `replyWithList`, `replyWithFlow`.
+
+> **Naming:** newer methods use the `replyWith*` style (e.g. `replyWithMedia`, `replyWithImage`). The older names (`replyMedia`, `replyImage`, `replyMessage`, …) still work but are **deprecated** — prefer the `replyWith*` versions.
+
 #### Media Messages
 
 ```typescript
@@ -635,6 +673,53 @@ app.listen(3000, () => {
   console.log('Webhook server running on port 3000');
 });
 ```
+
+## Implementing a Flow Endpoint
+
+For Flows that use `flow_action: 'data_exchange'`, WhatsApp calls **your** endpoint with an encrypted payload. The library provides helpers for the [endpoint protocol](https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint): RSA + AES-GCM decryption, response encryption (with the flipped IV), and `x-hub-signature-256` validation.
+
+```typescript
+import express from 'express';
+import {
+  decryptFlowRequest,
+  encryptFlowResponse,
+  isFlowSignatureValid,
+  FlowEndpointException,
+} from 'whatsapp-cloud-bot';
+
+const app = express();
+// Capture the raw body for signature validation
+app.use(express.json({ verify: (req: any, _res, buf) => (req.rawBody = buf) }));
+
+app.post('/flow', (req: any, res) => {
+  if (!isFlowSignatureValid(req.rawBody, req.get('x-hub-signature-256'), process.env.APP_SECRET!)) {
+    return res.sendStatus(432); // signature mismatch
+  }
+
+  try {
+    const { decryptedBody, aesKeyBuffer, initialVectorBuffer } =
+      decryptFlowRequest(req.body, process.env.FLOW_PRIVATE_KEY!);
+
+    // Health check
+    if (decryptedBody.action === 'ping') {
+      return res.send(
+        encryptFlowResponse({ data: { status: 'active' } }, aesKeyBuffer, initialVectorBuffer)
+      );
+    }
+
+    // ...your screen/data-exchange logic, building `responseObject`...
+    const responseObject = { screen: 'SUCCESS', data: {} };
+
+    res.send(encryptFlowResponse(responseObject, aesKeyBuffer, initialVectorBuffer));
+  } catch (err) {
+    if (err instanceof FlowEndpointException) return res.sendStatus(err.statusCode);
+    console.error(err);
+    res.sendStatus(500);
+  }
+});
+```
+
+The encrypted response must be returned as the **raw** HTTP 200 body (a base64 string), not wrapped in JSON.
 
 ## Best Practices
 

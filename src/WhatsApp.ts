@@ -18,9 +18,12 @@ import type {
   CarouselCard,
   QuickReplyAction,
   CtaUrlAction,
+  FlowParameters,
 } from './types/index.js';
 import { Dispatcher } from './Dispatcher.js';
 import type { Update } from './Update.js';
+import type { InlineButton, ListItem, ListSection } from './Markup.js';
+import type { InteractiveSendOptions } from './Message.js';
 import type { UpdateHandler } from './Handlers.js';
 import {
   MessageHandler,
@@ -35,8 +38,11 @@ import {
 } from './Handlers.js';
 import {
   markAsRead as markMessageAsRead,
-  sendTextMessage,
+  sendTextMessage as sendTextMessageRequest,
   sendInteractiveMessage,
+  sendButtonMessage as sendButtonMessageRequest,
+  sendListMessage as sendListMessageRequest,
+  sendFlowMessage as sendFlowMessageRequest,
   sendTemplateMessage,
   sendMediaMessage,
   sendCarouselButtonMessage,
@@ -154,7 +160,12 @@ export class WhatsApp {
   }
 
   /**
-   * Send text message
+   * Send a message. If `options.replyMarkup` is provided it is sent as an
+   * interactive message, otherwise as plain text.
+   *
+   * For text-only sends prefer {@link sendTextMessage}; for interactive sends
+   * prefer {@link sendButtonMessage} / {@link sendListMessage} /
+   * {@link sendFlowMessage}.
    */
   async sendMessage(
     phoneNumber: string,
@@ -180,12 +191,95 @@ export class WhatsApp {
       );
     }
 
-    return sendTextMessage(this.msgUrl, this.token, formattedPhone, text, {
+    return sendTextMessageRequest(this.msgUrl, this.token, formattedPhone, text, {
       msgId: options.msgId,
       webPagePreview: options.webPagePreview,
       tagMessage: options.tagMessage,
       bizOpaqueCallbackData: options.bizOpaqueCallbackData,
     });
+  }
+
+  /**
+   * Send a plain **text** message (no interactive markup). Use this when you
+   * only ever send text — unlike {@link sendMessage} it never branches into the
+   * interactive path.
+   */
+  async sendTextMessage(
+    phoneNumber: string,
+    text: string,
+    options: {
+      msgId?: string;
+      webPagePreview?: boolean;
+      tagMessage?: boolean;
+      bizOpaqueCallbackData?: string;
+    } = {}
+  ): Promise<AxiosResponse> {
+    return sendTextMessageRequest(
+      this.msgUrl,
+      this.token,
+      formatPhoneNumber(phoneNumber),
+      text,
+      options
+    );
+  }
+
+  /**
+   * Send an interactive **button** message (1–3 quick-reply buttons).
+   */
+  async sendButtonMessage(
+    phoneNumber: string,
+    text: string,
+    buttons: (string | InlineButton)[],
+    options: InteractiveSendOptions = {}
+  ): Promise<AxiosResponse> {
+    return sendButtonMessageRequest(
+      this.msgUrl,
+      this.token,
+      formatPhoneNumber(phoneNumber),
+      text,
+      buttons,
+      options
+    );
+  }
+
+  /**
+   * Send an interactive **list** message.
+   */
+  async sendListMessage(
+    phoneNumber: string,
+    text: string,
+    buttonText: string,
+    items: (ListItem | ListSection)[],
+    options: InteractiveSendOptions = {}
+  ): Promise<AxiosResponse> {
+    return sendListMessageRequest(
+      this.msgUrl,
+      this.token,
+      formatPhoneNumber(phoneNumber),
+      text,
+      buttonText,
+      items,
+      options
+    );
+  }
+
+  /**
+   * Send an interactive **Flow** message.
+   */
+  async sendFlowMessage(
+    phoneNumber: string,
+    text: string,
+    flow: FlowParameters,
+    options: InteractiveSendOptions = {}
+  ): Promise<AxiosResponse> {
+    return sendFlowMessageRequest(
+      this.msgUrl,
+      this.token,
+      formatPhoneNumber(phoneNumber),
+      text,
+      flow,
+      options
+    );
   }
 
   /**

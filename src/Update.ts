@@ -13,7 +13,18 @@ import type {
   CarouselCard,
   QuickReplyAction,
   CtaUrlAction,
+  FlowParameters,
 } from './types/index.js';
+import type { InlineButton, ListItem, ListSection } from './Markup.js';
+import type { InteractiveSendOptions } from './Message.js';
+
+/** Text-only reply options. */
+export interface ReplyTextOptions {
+  msgId?: string;
+  webPagePreview?: boolean;
+  tagMessage?: boolean;
+  bizOpaqueCallbackData?: string;
+}
 
 /**
  * Update class - encapsulates an incoming WhatsApp message
@@ -51,8 +62,27 @@ export class Update {
     this.messageId = this.message.id || '';
   }
 
+  // ---------------------------------------------------------------------------
+  // Text
+  // ---------------------------------------------------------------------------
+
   /**
-   * Reply to the current message
+   * Reply with a plain text message (text-only).
+   */
+  async replyWithText(
+    text: string,
+    options: ReplyTextOptions = {}
+  ): Promise<AxiosResponse> {
+    return await this.bot.sendTextMessage(this.userPhoneNumber, text, {
+      ...options,
+      msgId: options.msgId || this.messageId,
+    });
+  }
+
+  /**
+   * @deprecated Use {@link replyWithText} (text) or {@link replyWithButton} /
+   * {@link replyWithList} / {@link replyWithFlow} (interactive). Retained for
+   * backwards compatibility; still supports `options.replyMarkup`.
    */
   async replyMessage(
     text: string,
@@ -64,14 +94,51 @@ export class Update {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Interactive (buttons / list / flow)
+  // ---------------------------------------------------------------------------
+
   /**
-   * Reply with media
+   * Reply with an interactive button message (1–3 quick-reply buttons).
    */
-  async replyMedia(
-    mediaPath: string,
-    options: SendMediaOptions = {}
+  async replyWithButton(
+    text: string,
+    buttons: (string | InlineButton)[],
+    options: InteractiveSendOptions = {}
   ): Promise<AxiosResponse> {
-    return await this.bot.sendMediaMessage(this.userPhoneNumber, mediaPath, {
+    return await this.bot.sendButtonMessage(this.userPhoneNumber, text, buttons, {
+      ...options,
+      msgId: options.msgId || this.messageId,
+    });
+  }
+
+  /**
+   * Reply with an interactive list message.
+   */
+  async replyWithList(
+    text: string,
+    buttonText: string,
+    items: (ListItem | ListSection)[],
+    options: InteractiveSendOptions = {}
+  ): Promise<AxiosResponse> {
+    return await this.bot.sendListMessage(
+      this.userPhoneNumber,
+      text,
+      buttonText,
+      items,
+      { ...options, msgId: options.msgId || this.messageId }
+    );
+  }
+
+  /**
+   * Reply with an interactive WhatsApp Flow message.
+   */
+  async replyWithFlow(
+    text: string,
+    flow: FlowParameters,
+    options: InteractiveSendOptions = {}
+  ): Promise<AxiosResponse> {
+    return await this.bot.sendFlowMessage(this.userPhoneNumber, text, flow, {
       ...options,
       msgId: options.msgId || this.messageId,
     });
@@ -109,28 +176,25 @@ export class Update {
     );
   }
 
-  /**
-   * Reply with template message
-   */
-  async replyTemplate(
-    templateName: string,
-    components?: any[],
-    languageCode?: string,
-    bizOpaqueCallbackData?: string
-  ): Promise<AxiosResponse> {
-    return await this.bot.sendTemplateMessage(
-      this.userPhoneNumber,
-      templateName,
-      components,
-      languageCode,
-      bizOpaqueCallbackData
-    );
-  }
+  // ---------------------------------------------------------------------------
+  // Media
+  // ---------------------------------------------------------------------------
 
   /**
-   * Reply with image message
+   * Reply with media (type inferred from `options.mediaType`, default image).
    */
-  async replyImage(
+  async replyWithMedia(
+    mediaPath: string,
+    options: SendMediaOptions = {}
+  ): Promise<AxiosResponse> {
+    return await this.bot.sendMediaMessage(this.userPhoneNumber, mediaPath, {
+      ...options,
+      msgId: options.msgId || this.messageId,
+    });
+  }
+
+  /** Reply with an image message. */
+  async replyWithImage(
     imagePath: string,
     caption?: string,
     bizOpaqueCallbackData?: string
@@ -143,10 +207,8 @@ export class Update {
     );
   }
 
-  /**
-   * Reply with video message
-   */
-  async replyVideo(
+  /** Reply with a video message. */
+  async replyWithVideo(
     videoPath: string,
     caption?: string,
     bizOpaqueCallbackData?: string
@@ -159,10 +221,8 @@ export class Update {
     );
   }
 
-  /**
-   * Reply with audio message
-   */
-  async replyAudio(
+  /** Reply with an audio message. */
+  async replyWithAudio(
     audioPath: string,
     bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
@@ -173,10 +233,8 @@ export class Update {
     );
   }
 
-  /**
-   * Reply with document message
-   */
-  async replyDocument(
+  /** Reply with a document message. */
+  async replyWithDocument(
     documentPath: string,
     caption?: string,
     bizOpaqueCallbackData?: string
@@ -189,10 +247,19 @@ export class Update {
     );
   }
 
-  /**
-   * Reply with location message
-   */
-  async replyLocation(
+  /** Reply with a sticker message. */
+  async replyWithSticker(
+    stickerPath: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
+    return await this.bot.sendMediaMessage(this.userPhoneNumber, stickerPath, {
+      mediaType: 'sticker',
+      bizOpaqueCallbackData,
+    });
+  }
+
+  /** Reply with a location message. */
+  async replyWithLocation(
     latitude: number,
     longitude: number,
     name?: string,
@@ -209,16 +276,110 @@ export class Update {
     );
   }
 
-  /**
-   * Reply with sticker message
-   */
+  /** Reply with a template message. */
+  async replyWithTemplate(
+    templateName: string,
+    components?: any[],
+    languageCode?: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
+    return await this.bot.sendTemplateMessage(
+      this.userPhoneNumber,
+      templateName,
+      components,
+      languageCode,
+      bizOpaqueCallbackData
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Deprecated aliases (kept for backwards compatibility)
+  // ---------------------------------------------------------------------------
+
+  /** @deprecated Use {@link replyWithMedia}. */
+  async replyMedia(
+    mediaPath: string,
+    options: SendMediaOptions = {}
+  ): Promise<AxiosResponse> {
+    return await this.replyWithMedia(mediaPath, options);
+  }
+
+  /** @deprecated Use {@link replyWithTemplate}. */
+  async replyTemplate(
+    templateName: string,
+    components?: any[],
+    languageCode?: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
+    return await this.replyWithTemplate(
+      templateName,
+      components,
+      languageCode,
+      bizOpaqueCallbackData
+    );
+  }
+
+  /** @deprecated Use {@link replyWithImage}. */
+  async replyImage(
+    imagePath: string,
+    caption?: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
+    return await this.replyWithImage(imagePath, caption, bizOpaqueCallbackData);
+  }
+
+  /** @deprecated Use {@link replyWithVideo}. */
+  async replyVideo(
+    videoPath: string,
+    caption?: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
+    return await this.replyWithVideo(videoPath, caption, bizOpaqueCallbackData);
+  }
+
+  /** @deprecated Use {@link replyWithAudio}. */
+  async replyAudio(
+    audioPath: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
+    return await this.replyWithAudio(audioPath, bizOpaqueCallbackData);
+  }
+
+  /** @deprecated Use {@link replyWithDocument}. */
+  async replyDocument(
+    documentPath: string,
+    caption?: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
+    return await this.replyWithDocument(
+      documentPath,
+      caption,
+      bizOpaqueCallbackData
+    );
+  }
+
+  /** @deprecated Use {@link replyWithLocation}. */
+  async replyLocation(
+    latitude: number,
+    longitude: number,
+    name?: string,
+    address?: string,
+    bizOpaqueCallbackData?: string
+  ): Promise<AxiosResponse> {
+    return await this.replyWithLocation(
+      latitude,
+      longitude,
+      name,
+      address,
+      bizOpaqueCallbackData
+    );
+  }
+
+  /** @deprecated Use {@link replyWithSticker}. */
   async replySticker(
     stickerPath: string,
     bizOpaqueCallbackData?: string
   ): Promise<AxiosResponse> {
-    return await this.bot.sendMediaMessage(this.userPhoneNumber, stickerPath, {
-      mediaType: 'sticker',
-      bizOpaqueCallbackData,
-    });
+    return await this.replyWithSticker(stickerPath, bizOpaqueCallbackData);
   }
 }

@@ -5,6 +5,8 @@
 import type { AxiosResponse } from 'axios';
 import type { Update } from '../Update.js';
 import type { StatusUpdate } from '../StatusUpdate.js';
+import type { InlineButton, ListItem, ListSection } from '../Markup.js';
+import type { InteractiveSendOptions } from '../Message.js';
 
 /**
  * WhatsApp webhook value object received from WhatsApp servers
@@ -303,7 +305,85 @@ export type ReplyMarkupType =
   | 'button'
   | 'list'
   | 'location_request_message'
-  | 'carousel';
+  | 'carousel'
+  | 'flow';
+
+/**
+ * WhatsApp Flow — interactive message types
+ * @see https://developers.facebook.com/documentation/business-messaging/whatsapp/flows
+ */
+
+/** Whether the referenced Flow is a draft or a published Flow. */
+export type FlowMode = 'draft' | 'published';
+
+/**
+ * How the Flow is launched:
+ * - `navigate` — open a specific screen (optionally with prefilled data)
+ * - `data_exchange` — the first screen is resolved by your Flow endpoint
+ */
+export type FlowActionType = 'navigate' | 'data_exchange';
+
+/**
+ * Payload describing the first screen to show. Only valid when
+ * `flow_action` is `navigate`; omitted otherwise.
+ */
+export interface FlowActionPayload {
+  /** ID of the entry screen to display first. Defaults to `FIRST_ENTRY_SCREEN`. */
+  screen?: string;
+  /**
+   * Input data for the first screen. Must be a non-empty object — the library
+   * serializes it to the JSON string the API expects.
+   */
+  data?: Record<string, unknown>;
+}
+
+/**
+ * Identifier for the Flow — exactly one of `flow_id` or `flow_name` is required
+ * (they are mutually exclusive).
+ */
+export type FlowIdentifier =
+  | { flow_id: string; flow_name?: never }
+  | { flow_name: string; flow_id?: never };
+
+/**
+ * Developer-facing parameters for sending a Flow message. Fields the library
+ * defaults (version, mode, token, action) are optional; supply the rest.
+ */
+export type FlowParameters = FlowIdentifier & {
+  /** Text on the CTA button that opens the Flow (≤30 chars advised, no emoji). */
+  flow_cta: string;
+  /** Flow Message version. Defaults to `'3'` — you normally don't set this. */
+  flow_message_version?: string;
+  /** Draft or published Flow. Defaults to `'published'`. */
+  mode?: FlowMode;
+  /** Business-generated identifier echoed back to your endpoint. Defaults to `'unused'`. */
+  flow_token?: string;
+  /** `navigate` or `data_exchange`. Defaults to `'navigate'`. */
+  flow_action?: FlowActionType;
+  /** First-screen payload. Only used when `flow_action` is `navigate`. */
+  flow_action_payload?: FlowActionPayload;
+};
+
+/**
+ * The resolved `interactive.action` object sent to the API for a Flow message
+ * (after defaults are applied and `flow_action_payload.data` is serialized).
+ */
+export interface FlowAction {
+  name: 'flow';
+  parameters: {
+    flow_message_version: string;
+    flow_id?: string;
+    flow_name?: string;
+    flow_cta: string;
+    mode: FlowMode;
+    flow_token: string;
+    flow_action: FlowActionType;
+    flow_action_payload?: {
+      screen: string;
+      data?: string;
+    };
+  };
+}
 
 /**
  * Template component structure
@@ -521,6 +601,39 @@ export interface WhatsAppClient {
     phoneNumber: string,
     text: string,
     options?: SendMessageOptions
+  ): Promise<AxiosResponse>;
+
+  sendTextMessage(
+    phoneNumber: string,
+    text: string,
+    options?: {
+      msgId?: string;
+      webPagePreview?: boolean;
+      tagMessage?: boolean;
+      bizOpaqueCallbackData?: string;
+    }
+  ): Promise<AxiosResponse>;
+
+  sendButtonMessage(
+    phoneNumber: string,
+    text: string,
+    buttons: (string | InlineButton)[],
+    options?: InteractiveSendOptions
+  ): Promise<AxiosResponse>;
+
+  sendListMessage(
+    phoneNumber: string,
+    text: string,
+    buttonText: string,
+    items: (ListItem | ListSection)[],
+    options?: InteractiveSendOptions
+  ): Promise<AxiosResponse>;
+
+  sendFlowMessage(
+    phoneNumber: string,
+    text: string,
+    flow: FlowParameters,
+    options?: InteractiveSendOptions
   ): Promise<AxiosResponse>;
 
   sendTemplateMessage(
