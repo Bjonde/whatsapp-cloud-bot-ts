@@ -17,9 +17,27 @@ import type {
   CtaUrlAction,
   QuickReplyAction,
   CarouselCard,
+  FlowParameters,
 } from './types/index.js';
+import {
+  InlineButton,
+  InlineKeyboard,
+  InlineList,
+  InlineFlow,
+  ListItem,
+  ListSection,
+} from './Markup.js';
 import { isLink, getExtensionFromMimeType } from './utils/helpers.js';
 import { DEBUG } from './config.js';
+
+/** Options shared by the interactive convenience senders. */
+export interface InteractiveSendOptions {
+  msgId?: string;
+  header?: string;
+  headerType?: 'text' | 'image' | 'video' | 'document';
+  footer?: string;
+  bizOpaqueCallbackData?: string;
+}
 
 const TIMEOUT = 30000; // 30 seconds
 
@@ -209,6 +227,58 @@ export async function sendInteractiveMessage(
     headers: getHeaders(token),
     timeout: TIMEOUT,
   });
+}
+
+/**
+ * Send an interactive **button** message (1–3 quick-reply buttons).
+ * Convenience wrapper that builds the markup and calls
+ * {@link sendInteractiveMessage} under the hood.
+ */
+export async function sendButtonMessage(
+  url: string,
+  token: string,
+  phoneNumber: string,
+  text: string,
+  buttons: (string | InlineButton)[],
+  options: InteractiveSendOptions = {}
+): Promise<AxiosResponse> {
+  const markup = new InlineKeyboard(buttons);
+  return sendInteractiveMessage(url, token, phoneNumber, text, markup, options);
+}
+
+/**
+ * Send an interactive **list** message.
+ * Convenience wrapper that builds the markup and calls
+ * {@link sendInteractiveMessage} under the hood.
+ */
+export async function sendListMessage(
+  url: string,
+  token: string,
+  phoneNumber: string,
+  text: string,
+  buttonText: string,
+  items: (ListItem | ListSection)[],
+  options: InteractiveSendOptions = {}
+): Promise<AxiosResponse> {
+  const markup = new InlineList(buttonText, items);
+  return sendInteractiveMessage(url, token, phoneNumber, text, markup, options);
+}
+
+/**
+ * Send an interactive **Flow** message.
+ * Convenience wrapper that builds the Flow markup (applying defaults) and calls
+ * {@link sendInteractiveMessage} under the hood.
+ */
+export async function sendFlowMessage(
+  url: string,
+  token: string,
+  phoneNumber: string,
+  text: string,
+  flow: FlowParameters,
+  options: InteractiveSendOptions = {}
+): Promise<AxiosResponse> {
+  const markup = new InlineFlow(flow);
+  return sendInteractiveMessage(url, token, phoneNumber, text, markup, options);
 }
 
 /**

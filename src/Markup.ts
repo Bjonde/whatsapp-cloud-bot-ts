@@ -3,7 +3,12 @@
  * Used to create buttons, lists, and other interactive elements
  */
 
-import type { ReplyMarkup, ReplyMarkupType } from './types/index.js';
+import type {
+  ReplyMarkup,
+  ReplyMarkupType,
+  FlowParameters,
+  FlowAction,
+} from './types/index.js';
 
 /**
  * Base Reply Markup Class
@@ -357,3 +362,83 @@ export class InlineLocationRequest extends BaseReplyMarkup {
     super('location_request_message', markup);
   }
 }
+
+/**
+ * Build the resolved `interactive.action` object for a Flow message, applying
+ * WhatsApp's documented defaults and serializing the first-screen `data`.
+ *
+ * Defaults: `flow_message_version='3'`, `mode='published'`,
+ * `flow_token='unused'`, `flow_action='navigate'`. When `flow_action` is
+ * `navigate` and a payload is supplied, `screen` defaults to
+ * `'FIRST_ENTRY_SCREEN'`; for `data_exchange` the payload is omitted.
+ *
+ * @throws if neither or both of `flow_id`/`flow_name` are provided, or if
+ *         `flow_cta` is missing.
+ */
+export function buildFlowAction(params: FlowParameters): FlowAction {
+  const hasId = 'flow_id' in params && !!params.flow_id;
+  const hasName = 'flow_name' in params && !!params.flow_name;
+
+  if (hasId === hasName) {
+    throw new Error(
+      'Flow requires exactly one of flow_id or flow_name (not both, not neither)'
+    );
+  }
+  if (!params.flow_cta) {
+    throw new Error('Flow requires flow_cta (the CTA button text)');
+  }
+
+  const flowAction: FlowActionTypeLocal = params.flow_action ?? 'navigate';
+
+  const parameters: FlowAction['parameters'] = {
+    flow_message_version: params.flow_message_version ?? '3',
+    flow_cta: params.flow_cta,
+    mode: params.mode ?? 'published',
+    flow_token: params.flow_token ?? 'unused',
+    flow_action: flowAction,
+  };
+
+  if (hasId) {
+    parameters.flow_id = params.flow_id;
+  } else {
+    parameters.flow_name = params.flow_name;
+  }
+
+  // flow_action_payload is only valid for `navigate`; omit it for data_exchange
+  if (flowAction === 'navigate' && params.flow_action_payload) {
+    const { screen, data } = params.flow_action_payload;
+    parameters.flow_action_payload = {
+      screen: screen ?? 'FIRST_ENTRY_SCREEN',
+      ...(data !== undefined ? { data: JSON.stringify(data) } : {}),
+    };
+  }
+
+  return { name: 'flow', parameters };
+}
+
+/**
+ * WhatsApp Flow message markup.
+ *
+ * @example
+ * ```typescript
+ * const flow = new InlineFlow({
+ *   flow_id: '1234567890',
+ *   flow_cta: 'Sign up',
+ *   flow_token: 'order_42',
+ *   flow_action: 'navigate',
+ *   flow_action_payload: { screen: 'WELCOME', data: { plan: 'pro' } },
+ * });
+ * ```
+ */
+export class InlineFlow extends BaseReplyMarkup {
+  /**
+   * Creates a Flow message markup.
+   * @param params - Flow parameters (one of flow_id/flow_name required)
+   */
+  constructor(params: FlowParameters) {
+    super('flow', buildFlowAction(params));
+  }
+}
+
+// Local alias to keep the action-type union referenceable without re-importing.
+type FlowActionTypeLocal = FlowAction['parameters']['flow_action'];
